@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Battalion Command — The Kazan Front</title>
+    <meta name="description" content="Command battalions on a living 3D front line. Push the enemy back, capture their strongholds, win the war." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <canvas id="gl"></canvas>
+    <canvas id="hud"></canvas>
+
+    <div id="ui" class="hidden">
+      <header id="topbar">
+        <div class="brand">
+          <div class="logo">⚔</div>
+          <div>
+            <div class="war-name">THE KAZAN FRONT</div>
+            <div class="date" id="date">Year 412 · Day 1 · 06:00</div>
+          </div>
+        </div>
+        <div id="weather" class="chip" title="Weather">☀ Clear</div>
+        <div class="control-bar" title="Territory controlled">
+          <div class="cb-labels"><span class="leaf">LEAF <b id="leafPct">50%</b></span><span id="collapse" class="collapse"></span><span class="stone"><b id="stonePct">50%</b> STONE</span></div>
+          <div class="cb-track"><div id="leafBar"></div><div class="cb-mid"></div></div>
+        </div>
+        <div id="objectives" class="objectives" title="Leaf objectives: capture all of them, or take Kharzad"></div>
+        <div class="time-controls">
+          <button id="pauseBtn" class="tbtn" title="Pause (Space)">❚❚</button>
+          <button data-speed="1" class="tbtn speed active" title="Speed 1× (1)">1×</button>
+          <button data-speed="2" class="tbtn speed" title="Speed 2× (2)">2×</button>
+          <button data-speed="4" class="tbtn speed" title="Speed 4× (3)">4×</button>
+        </div>
+        <button id="generalsBtn" class="tbtn wide" title="Generals and armies (G)">★ GENERALS</button>
+        <button id="soundBtn" class="tbtn" title="Sound on/off">🔊</button>
+        <button id="helpBtn" class="tbtn" title="Controls (H)">?</button>
+      </header>
+
+      <aside id="leftPanel" class="panel"></aside>
+
+      <aside id="rightCol">
+        <div id="battlePanel" class="panel"></div>
+        <div id="feed" class="panel feed"></div>
+      </aside>
+
+      <footer id="orders">
+        <div id="hint" class="hint"></div>
+        <div class="order-buttons">
+          <button data-order="move" class="obtn"><span class="key">M</span><span class="oic">➜</span><span class="olabel">MOVE</span></button>
+          <button data-order="attack" class="obtn attack"><span class="key">A</span><span class="oic">⚔</span><span class="olabel">ATTACK</span></button>
+          <button data-order="defend" class="obtn defend"><span class="key">D</span><span class="oic">⛨</span><span class="olabel">DEFEND</span></button>
+          <button data-order="retreat" class="obtn retreat"><span class="key">R</span><span class="oic">↩</span><span class="olabel">RETREAT</span></button>
+          <button data-order="reinforce" class="obtn reinforce"><span class="key">F</span><span class="oic">✚</span><span class="olabel">REINFORCE</span></button>
+        </div>
+      </footer>
+
+      <div id="minimapWrap" class="panel"><canvas id="minimap"></canvas></div>
+      <div id="banner"></div>
+      <div id="tooltip"></div>
+      <div id="pausedTag" class="hidden">PAUSED</div>
+      <div id="generalsModal" class="modal hidden"></div>
+      <div id="helpModal" class="modal hidden"></div>
+      <div id="endScreen" class="modal hidden"></div>
+    </div>
+
+    <div id="title" class="hidden">
+      <div class="title-card">
+        <div class="kicker">LEAF ALLIANCE HIGH COMMAND</div>
+        <h1>BATTALION<br /><span>COMMAND</span></h1>
+        <div class="subtitle">The Kazan Front</div>
+        <p class="premise">
+          The Stone Dominion has massed its battalions along our border. Take command of the Leaf Alliance,
+          break their front line and push them back to Kharzad.
+        </p>
+        <div class="steps">
+          <div class="step"><b>1</b><span><em>Select</em> one of your green battalions</span></div>
+          <div class="step"><b>2</b><span><em>Click</em> the map to move — or a red battalion to attack</span></div>
+          <div class="step"><b>3</b><span><em>Reinforce</em>, break their line, capture the <span class="obj">◎</span> objectives</span></div>
+        </div>
+        <div class="difficulty" id="difficulty">
+          <button data-diff="easy">Recruit<small>Gentle enemy</small></button>
+          <button data-diff="normal" class="active">Officer<small>Fair fight</small></button>
+          <button data-diff="hard">General<small>Relentless AI</small></button>
+        </div>
+        <button id="startBtn" class="start">START THE WAR</button>
+        <div class="title-foot">Drag to pan · Scroll to zoom · Q/E to rotate · Space to pause</div>
+      </div>
+    </div>
+
+    <div id="loading">
+      <div class="load-card">
+        <div class="logo big">⚔</div>
+        <div class="load-title">BATTALION COMMAND</div>
+        <div id="loadText">Surveying the battlefield…</div>
+        <div class="load-bar"><div id="loadBar"></div></div>
+      </div>
+    </div>
+
+    <noscript>This game needs JavaScript and WebGL.</noscript>
+    <script src="dist/game.js"></script>
+  </body>
+</html>
