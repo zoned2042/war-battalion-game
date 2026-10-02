@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --panel: rgba(14, 18, 16, 0.84);
   --panel-solid: #121714;
   --border: rgba(222, 196, 120, 0.26);
@@ -90,7 +91,8 @@ button {
   top: 0;
   left: 0;
   right: 0;
-  height: 58px;
+  height: calc(58px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px) !important;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -730,7 +732,7 @@ button {
 #orders {
   position: absolute;
   left: 50%;
-  bottom: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
