@@ -1,6 +1,10 @@
 // Renderer, lights, sky and the strategy camera.
 
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { clamp, lerp, smoothstep } from '../core/util.js';
 import { WORLD } from '../data/config.js';
 
@@ -52,7 +56,27 @@ export class SceneRig {
     this.shake = 0;
     this.raycaster = new THREE.Raycaster();
     this.tmpV = new THREE.Vector3();
+    this.buildComposer();
     this.resize();
+  }
+
+  // Bloom makes the front line, gunfire and explosions glow.
+  buildComposer() {
+    try {
+      const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+      const target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
+      const composer = new EffectComposer(this.renderer, target);
+      composer.addPass(new RenderPass(this.scene, this.camera));
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), 0.55, 0.45, 0.88);
+      composer.addPass(this.bloom);
+      composer.addPass(new OutputPass());
+      this.composer = composer;
+      this.useBloom = true;
+    } catch (err) {
+      console.warn('Bloom unavailable', err);
+      this.composer = null;
+      this.useBloom = false;
+    }
   }
 
   buildSky() {
@@ -97,6 +121,10 @@ export class SceneRig {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.composer) {
+      this.composer.setPixelRatio(this.renderer.getPixelRatio());
+      this.composer.setSize(w, h);
+    }
     this.width = w;
     this.height = h;
   }
@@ -218,6 +246,7 @@ export class SceneRig {
   }
 
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.useBloom && this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 }

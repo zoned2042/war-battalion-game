@@ -58,7 +58,7 @@ export class Combat {
     }
     if (u.surrounded) p *= 0.75;
     if (u.shakenUntil > game.time) p *= 0.85;
-    if (game.collapsing[u.side]) p *= 0.9;
+    if (game.collapsing[u.side]) p *= u.side === STONE ? 0.88 : 0.96;
     if (role === 'att') {
       if (u.order.type === 'attack') p *= 1.08;
       p *= this.crossingMult(u, b);
@@ -76,7 +76,7 @@ export class Combat {
     const list = role === 'att' ? b.attackers : b.defenders;
     let p = 0;
     for (const u of list) p += this.power(u, role, b);
-    if (role === 'def') p *= this.terrainDefense(b.cell);
+    if (role === 'def') p *= this.terrainDefense(b.cell) * 1.1;
     return p;
   }
 
@@ -372,7 +372,7 @@ export class Combat {
         if (lead && lead.path[0] !== b.cell && game.map.edge(lead.cell, b.cell)) lead.path.unshift(b.cell);
         if (lead) lead.moving = true;
       }
-      const text = mine ? `Enemy position captured ${b.place}!` : `Our position ${b.place} has fallen!`;
+      const text = mine ? `Enemy position ${b.place} captured!` : `Our position ${b.place} has fallen!`;
       game.emit('feed', { kind: mine ? 'good' : 'bad', icon: '⚔', text, battle: b });
       game.emit('float', { x: b.x, y: b.y, text: mine ? 'POSITION TAKEN!' : 'POSITION LOST', side: b.winner });
     } else {

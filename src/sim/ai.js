@@ -13,6 +13,9 @@ export class EnemyAI {
     this.nextOffensive = 20 + Math.random() * 10;
     this.offensive = null; // { target, units: [], until }
     this.lostCells = []; // recently lost important cells -> counterattack
+    game.on('siege', ({ cell, side }) => {
+      if (side !== this.side) this.lostCells.push({ cell, t: game.time });
+    });
     game.on('captured', ({ cell, side }) => {
       if (side === this.side) return;
       const c = game.map.cells[cell];
@@ -33,11 +36,17 @@ export class EnemyAI {
   }
 
   // Would `u` likely win pushing into `cell` right now?
-  goodOdds(u, cell) {
+  goodOdds(u, cell, need = 1.2) {
     const game = this.game;
     const foes = game.enemiesInCell(u.side, cell);
-    const fp = foes.reduce((s, f) => s + this.power(f), 0) * game.combat.terrainDefense(cell);
-    return this.power(u) * this.aggression(u) > fp * 1.2;
+    const fp = foes.reduce((s, f) => s + this.power(f) * (1 + 0.4 * f.entrench), 0) * game.combat.terrainDefense(cell);
+    // count friends already heading into the same cell
+    let mine = this.power(u);
+    for (const o of game.units) {
+      if (o === u || !o.alive || o.side !== u.side || o.routed) continue;
+      if (o.battle && o.battle.cell === cell) mine += this.power(o);
+    }
+    return mine * this.aggression(u) > fp * need;
   }
 
   aggression(u) {
@@ -127,7 +136,9 @@ export class EnemyAI {
     }
 
     // 4. counterattack recently lost towns and forts
-    this.lostCells = this.lostCells.filter((l) => game.time - l.t < 40 && map.cells[l.cell].owner !== this.side);
+    this.lostCells = this.lostCells.filter(
+      (l) => game.time - l.t < 40 && (map.cells[l.cell].owner !== this.side || game.sieges.has(l.cell)),
+    );
     for (const lost of this.lostCells) {
       const c = map.cells[lost.cell];
       const already = mine.filter((u) => u.task?.kind === 'counter' && u.task.cell === lost.cell).length;
@@ -145,7 +156,7 @@ export class EnemyAI {
           if (orders.attack(u, { cell: lost.cell })) this.assign(u, { kind: 'counter', cell: lost.cell }, 24);
         }
         if (holders.length) {
-          game.emit('feed', { kind: 'bad', icon: '⚠', text: `Enemy counterattack on ${game.map.placeName(c.x, c.y)}!`, cell: lost.cell, alert: true });
+          game.emit('feed', { kind: 'bad', icon: '⚠', text: `Enemy counterattack ${game.map.placeName(c.x, c.y)}!`, cell: lost.cell, alert: true });
         }
       }
     }
@@ -163,7 +174,7 @@ export class EnemyAI {
         .filter((u) => dist(u, f) < WORLD.CELL * 6)
         .sort((a, b) => dist(a, f) - dist(b, f))[0];
       if (!cand) continue;
-      if (this.power(cand) * this.aggression(cand) > fp * 1.05) {
+      if (this.power(cand) * this.aggression(cand) > fp * 1.3) {
         if (orders.attack(cand, { unit: f })) this.assign(cand, { kind: 'hunt', target: f.id }, 18);
       }
     }
@@ -205,7 +216,7 @@ export class EnemyAI {
       for (const c of front) fd = Math.min(fd, Math.hypot(c.x - t.x, c.y - t.y));
       const defenders = foes.filter((f) => Math.hypot(f.x - t.x, f.y - t.y) < WORLD.CELL * 3.5);
       const defP = defenders.reduce((s, f) => s + this.power(f), 0);
-      const score = (objectives.includes(t.key) ? 900 : 300) - fd * 1.1 - defP * 0.5 + Math.random() * 200;
+      const score = (objectives.includes(t.key) ? 700 : 300) - fd * 1.4 - defP * 0.5 + Math.random() * 200;
       if (score > bestScore) {
         bestScore = score;
         best = t;

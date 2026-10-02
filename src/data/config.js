@@ -20,7 +20,7 @@ export const SIDES = [
     adj: 'Leaf',
     color: '#4cc46b',
     dark: '#1f6e38',
-    tint: [72, 190, 100],
+    tint: [64, 186, 98],
     css: 'leaf',
   },
   {
@@ -30,7 +30,7 @@ export const SIDES = [
     adj: 'Stone',
     color: '#e0503f',
     dark: '#7c2018',
-    tint: [214, 74, 58],
+    tint: [206, 52, 58],
     css: 'stone',
   },
 ];
@@ -85,8 +85,8 @@ export const TRAITS = {
 };
 
 export const DIFFICULTY = {
-  easy: { label: 'Recruit', enemyStrength: 0.8, aiThink: 3.4, aiAggro: 0.6, enemyReinf: 0.65 },
-  normal: { label: 'Officer', enemyStrength: 0.95, aiThink: 2.4, aiAggro: 0.85, enemyReinf: 0.9 },
+  easy: { label: 'Recruit', enemyStrength: 0.75, aiThink: 3.6, aiAggro: 0.55, enemyReinf: 0.6 },
+  normal: { label: 'Officer', enemyStrength: 0.88, aiThink: 2.6, aiAggro: 0.78, enemyReinf: 0.85 },
   hard: { label: 'General', enemyStrength: 1.1, aiThink: 1.6, aiAggro: 1.2, enemyReinf: 1.3 },
 };
 

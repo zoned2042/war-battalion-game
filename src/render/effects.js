@@ -192,7 +192,7 @@ export class Effects {
   buildClouds(scene) {
     const tex = puffTexture();
     this.clouds = [];
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 16; i++) {
       const mat = new THREE.SpriteMaterial({ map: tex, color: '#ffffff', transparent: true, opacity: 0.0, depthWrite: false, fog: false });
       const s = new THREE.Sprite(mat);
       const size = 380 + Math.random() * 420;
@@ -223,7 +223,7 @@ export class Effects {
   explosion(x, z, big = false, yOverride = null) {
     const y = yOverride ?? this.ground(x, z) + 1;
     const k = big ? 1.6 : 1;
-    this.glow.add({ x, y: y + 4 * k, z, vx: 0, vy: 0, vz: 0, life: 0.28, s0: 26 * k, s1: 70 * k, a0: 1, c0: [1, 0.85, 0.45], c1: [1, 0.4, 0.1], fadePow: 1.5 });
+    this.glow.add({ x, y: y + 4 * k, z, vx: 0, vy: 0, vz: 0, life: 0.3, s0: 20 * k, s1: 58 * k, a0: 0.8, c0: [1, 0.62, 0.22], c1: [0.9, 0.25, 0.05], fadePow: 1.6 });
     for (let i = 0; i < 8 * k; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = 10 + Math.random() * 25;
@@ -238,7 +238,7 @@ export class Effects {
       const grey = 0.22 + Math.random() * 0.2;
       this.smoke.add({
         x: x + Math.cos(a) * 4, y: y + 3, z: z + Math.sin(a) * 4, vx: Math.cos(a) * sp + 4, vy: 8 + Math.random() * 10, vz: Math.sin(a) * sp, drag: 0.6,
-        life: 2.4 + Math.random() * 2, s0: 12 * k, s1: 48 * k, a0: 0.55, c0: [grey, grey * 0.95, grey * 0.9], c1: [0.55, 0.55, 0.55], fadeIn: 0.15,
+        life: 2.6 + Math.random() * 2.2, s0: 14 * k, s1: 56 * k, a0: 0.85, c0: [grey, grey * 0.95, grey * 0.9], c1: [0.5, 0.5, 0.5], fadeIn: 0.15,
       });
     }
     for (let i = 0; i < 10 * k; i++) {
@@ -264,7 +264,7 @@ export class Effects {
     const y = this.ground(x, z) + 1;
     this.smoke.add({
       x: x + (Math.random() - 0.5) * 20, y, z: z + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 4, vy: 3, vz: (Math.random() - 0.5) * 4,
-      life: 1.6, s0: 8, s1: 26, a0: 0.22, c0: [0.62, 0.55, 0.42], fadeIn: 0.2,
+      life: 1.8, s0: 9, s1: 30, a0: 0.35, c0: [0.62, 0.55, 0.42], fadeIn: 0.2,
     });
   }
 
@@ -352,12 +352,12 @@ export class Effects {
     }
     // clouds drift; visible from high up
     const dist = this.rig.cam.dist;
-    const vis = Math.min(1, Math.max(0, (dist - 900) / 900));
+    const vis = Math.min(1, Math.max(0, (dist - 1500) / 1200));
     const overcast = weather === 'rain' ? 1.3 : weather === 'fog' ? 1.1 : 1;
     for (const c of this.clouds) {
       c.sprite.position.x += c.speed * dt;
       if (c.sprite.position.x > WORLD.W + 700) c.sprite.position.x = -700;
-      c.sprite.material.opacity = Math.min(0.85, vis * c.base * overcast * 0.75);
+      c.sprite.material.opacity = Math.min(0.4, vis * c.base * overcast * 0.32);
       c.sprite.material.color.set(weather === 'rain' ? '#9aa3ab' : '#ffffff');
     }
   }

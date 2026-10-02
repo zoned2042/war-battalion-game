@@ -302,7 +302,7 @@ export class Terrain {
     const map = this.map;
     for (const side of [0, 1]) {
       const t = SIDES[side].tint;
-      ctx.fillStyle = `rgba(${t[0]},${t[1]},${t[2]},0.34)`;
+      ctx.fillStyle = `rgba(${t[0]},${t[1]},${t[2]},${side === 0 ? 0.26 : 0.3})`;
       ctx.beginPath();
       for (const c of map.cells) {
         if (c.owner !== side) continue;
@@ -332,7 +332,7 @@ export class Terrain {
 
   update(now, version) {
     const needs = version !== this.ownVersion || this.flashes.length > 0;
-    if (needs && now - this.lastOwnDraw > 1 / 20) {
+    if (needs && now - this.lastOwnDraw > 1 / 12) {
       this.drawOwnership(now);
       this.ownVersion = version;
       this.lastOwnDraw = now;

@@ -635,12 +635,14 @@ export class UI {
       return;
     }
     this.bannerBusy = true;
+    const token = (this.bannerToken = (this.bannerToken || 0) + 1);
     el.className = `${b.kind || 'info'} ${b.big ? 'big' : ''}`;
     el.innerHTML = `<div class="bt">${esc(b.text)}</div><div class="rule"></div><div class="bs">${esc(b.sub || '')}</div>`;
-    requestAnimationFrame(() => el.classList.add('show'));
+    requestAnimationFrame(() => token === this.bannerToken && el.classList.add('show'));
     if (b.kind === 'good') this.app.audio.fanfare(true);
     else if (b.kind === 'bad') this.app.audio.fanfare(false);
     setTimeout(() => {
+      this.bannerToken++;
       el.classList.remove('show');
       setTimeout(() => this.nextBanner(), 450);
     }, b.big ? 3600 : 2500);

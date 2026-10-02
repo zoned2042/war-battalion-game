@@ -711,8 +711,8 @@ export class GameMap {
         best = l;
       }
     }
-    if (!best) return 'the front';
-    return bd < 60 ? best.name : 'near ' + best.name;
+    if (!best) return 'at the front';
+    return (bd < 60 ? 'at ' : 'near ') + best.name;
   }
 }
 

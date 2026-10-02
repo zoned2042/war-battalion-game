@@ -272,11 +272,16 @@ export function updateMovement(game, u, dt) {
 
   // contact check: enemies holding the next cell?
   const enemies = game.enemiesInCell(u.side, next);
-  if (enemies.length && !u.routed && game.aiSides.has(u.side) && u.order.type === 'move' && !game.ai.goodOdds(u, next)) {
-    // AI units only blunder into fights they were not sent to when the odds are good
-    setPath(game, u, []);
-    u.order = { type: 'idle' };
-    return;
+  if (enemies.length && !u.routed && game.aiSides.has(u.side) && !game.combat.battleAt(next)) {
+    // AI battalions take a last look before committing: plain moves need good odds,
+    // attacks call off hopeless assaults on a cell that has filled up with defenders
+    const need = u.order.type === 'move' ? 1.2 : u.task?.kind === 'offensive' ? 0.55 : 0.75;
+    if (!game.ai.goodOdds(u, next, need)) {
+      setPath(game, u, []);
+      u.order = { type: 'idle' };
+      if (u.task && u.task.kind !== 'garrison') u.task.until = game.time;
+      return;
+    }
   }
   if (enemies.length && !u.routed && u.order.type === 'reinforce') {
     const t = game.unitById.get(u.order.unit);
@@ -313,7 +318,7 @@ export function updateRecovery(game, u, dt) {
   const c = map.cells[u.cell];
   const loc = c.loc !== null ? map.locations[c.loc] : null;
   const friendlyLoc = loc && c.owner === u.side && !u.surrounded;
-  const collapse = game.collapsing[u.side] ? 0.5 : 1;
+  const collapse = game.collapsing[u.side] ? (u.side === LEAF ? 0.85 : 0.5) : 1;
   if (!u.surrounded) {
     const orgRate = (u.moving ? 0.03 : 0.07) * (u.morale < 0.3 ? 0.6 : 1);
     u.org = Math.min(1, u.org + orgRate * dt);

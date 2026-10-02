@@ -12,6 +12,8 @@ import { Territory } from './territory.js';
 import { EnemyAI } from './ai.js';
 import { BattlefieldEvents } from './events.js';
 
+const SIEGE_HOURS = { capital: 20, city: 8, fort: 12, bridge: 6 };
+
 export class Game {
   constructor(map, difficulty = 'normal') {
     this.map = map;
@@ -33,6 +35,7 @@ export class Game {
     this.over = null;
     this.stats = { battles: 0, battlesWon: 0, enemyDestroyed: 0, unitsLost: 0, placesTaken: 0, placesLost: 0 };
     this.acc = { zoc: 0, supply: 0, hour: 0 };
+    this.sieges = new Map();
     this.occ = [new Int16Array(map.cells.length), new Int16Array(map.cells.length)];
     this.occDirty = true;
 
@@ -94,7 +97,8 @@ export class Game {
         cell = best;
       }
       taken.add(cell);
-      this.addUnit({ ...def, cell });
+      const u = this.addUnit({ ...def, cell });
+      u.entrench = 0.45; // the war starts from prepared positions
     }
   }
 
@@ -172,9 +176,60 @@ export class Game {
         o.org = Math.max(0, o.org - 0.1);
       }
     }
-    if (c.owner !== u.side) this.territory.setOwner(cell, u.side, u);
+    if (c.owner !== u.side) {
+      const loc = c.loc !== null ? this.map.locations[c.loc] : null;
+      if (loc && SIEGE_HOURS[loc.type]) this.startSiege(cell, loc, u);
+      else this.territory.setOwner(cell, u.side, u);
+    }
     const b = this.combat.battleAt(cell);
     if (b && b.defenders.length && b.defenders[0].side === u.side) this.combat.addDefender(b, u);
+  }
+
+  // Strongholds are not taken by walking in: they must be held for a while.
+  startSiege(cell, loc, u) {
+    if (this.sieges.has(cell)) return;
+    const need = SIEGE_HOURS[loc.type];
+    this.sieges.set(cell, { cell, loc, side: u.side, progress: 0, need, start: this.time });
+    const mine = u.side === LEAF;
+    const isObj = this.objectives[LEAF].includes(loc.key) || this.objectives[STONE].includes(loc.key);
+    this.emit('siege', { cell, loc, side: u.side });
+    this.emit('feed', {
+      kind: mine ? 'good' : 'bad',
+      icon: mine ? '⚑' : '⚠',
+      text: mine
+        ? `${u.short} is taking ${loc.name} — hold it for ${need}h`
+        : `${loc.name} is under siege! It falls in ${need}h unless we drive them out`,
+      cell,
+      alert: !mine,
+    });
+    if (!mine && (isObj || loc.type === 'capital')) {
+      this.emit('banner', { text: `${loc.name.toUpperCase()} UNDER SIEGE`, sub: `Send battalions to drive the enemy out — ${need}h left`, kind: 'bad' });
+    }
+  }
+
+  updateSieges(dt) {
+    for (const [cell, s] of this.sieges) {
+      const holders = this.units.filter((o) => o.alive && !o.routed && o.side === s.side && o.cell === cell);
+      const owner = this.map.cells[cell].owner;
+      if (!holders.length || owner === s.side) {
+        this.sieges.delete(cell);
+        if (owner !== s.side) {
+          this.emit('feed', {
+            kind: s.side === LEAF ? 'bad' : 'good',
+            icon: s.side === LEAF ? '⚠' : '🛡',
+            text: s.side === LEAF ? `Our siege of ${s.loc.name} was broken` : `The siege of ${s.loc.name} is lifted!`,
+            cell,
+          });
+        }
+        continue;
+      }
+      if (holders.some((h) => h.battle && h.role === 'def')) continue; // fighting off a relief attack
+      s.progress += dt * (1 + 0.25 * (holders.length - 1));
+      if (s.progress >= s.need) {
+        this.sieges.delete(cell);
+        this.territory.setOwner(cell, s.side, holders[0]);
+      }
+    }
   }
 
   destroyUnit(u, reason) {
@@ -250,7 +305,8 @@ export class Game {
       const collapsing = held >= 2;
       if (collapsing && !this.collapsing[foe]) {
         this.collapsing[foe] = true;
-        for (const u of this.units) if (u.alive && u.side === foe) u.morale = Math.max(0, u.morale - 0.1);
+        const hit = foe === LEAF ? 0.04 : 0.1;
+        for (const u of this.units) if (u.alive && u.side === foe) u.morale = Math.max(0, u.morale - hit);
         const mineCollapsing = foe === LEAF;
         this.emit('banner', {
           text: mineCollapsing ? 'OUR FRONT IS COLLAPSING' : 'ENEMY FRONT COLLAPSING',
@@ -295,6 +351,7 @@ export class Game {
     this.occDirty = true;
     for (const u of this.units) if (u.alive) updateMovement(this, u, dt);
     this.combat.update(dt);
+    this.updateSieges(dt);
     for (const u of this.units) if (u.alive) updateRecovery(this, u, dt);
     this.acc.zoc += dt;
     this.acc.supply += dt;

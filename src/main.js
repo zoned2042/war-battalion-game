@@ -26,6 +26,33 @@ class App {
     this.weatherMix = { fog: 0, rain: 0 };
     this.dustAcc = 0;
     this.bridgeCheck = 0;
+    this.perf = { acc: 0, frames: 0, level: 0 };
+  }
+
+  // Step quality down on slow machines: pixel ratio first, then shadows.
+  adaptQuality(dt) {
+    const p = this.perf;
+    p.acc += dt;
+    p.frames++;
+    if (p.acc < 2.5) return;
+    const avg = p.acc / p.frames;
+    p.acc = 0;
+    p.frames = 0;
+    if (avg < 1 / 38 || p.level >= 3) return;
+    p.level++;
+    const r = this.rig.renderer;
+    if (p.level === 1 && r.getPixelRatio() > 1) {
+      r.setPixelRatio(1);
+      this.rig.resize();
+    } else if (p.level <= 2 && this.rig.useBloom) {
+      this.rig.useBloom = false;
+    } else if (p.level <= 2) {
+      this.rig.sun.shadow.mapSize.set(1024, 1024);
+      this.rig.sun.shadow.map?.dispose();
+      this.rig.sun.shadow.map = null;
+    } else {
+      this.rig.sun.castShadow = false;
+    }
   }
 
   async boot() {
@@ -226,6 +253,7 @@ class App {
     const now = t / 1000;
     const dt = Math.min(0.05, (t - this.last) / 1000);
     this.last = t;
+    if (!window.__noAdapt) this.adaptQuality(dt);
     const game = this.game;
     if (this.started) {
       game.update(dt);

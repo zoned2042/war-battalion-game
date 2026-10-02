@@ -41,8 +41,11 @@ export class Hud {
   }
 
   float(x, y, text, side) {
-    this.floats.push({ x, y, text, side, t: performance.now() / 1000 });
-    if (this.floats.length > 30) this.floats.shift();
+    // skip duplicates at the same spot
+    const t = performance.now() / 1000;
+    if (this.floats.some((f) => f.text === text && Math.hypot(f.x - x, f.y - y) < 60 && t - f.t < 1)) return;
+    this.floats.push({ x, y, text, side, t });
+    if (this.floats.length > 14) this.floats.shift();
   }
 
   draw(now, game, ui) {
@@ -58,6 +61,7 @@ export class Hud {
     this.drawPaths(ctx, now, game, ui);
     this.drawUnits(ctx, now, game, ui, dist, k);
     this.drawBattles(ctx, now, game, ui, dist, k);
+    this.drawSieges(ctx, game, k);
     this.drawFloats(ctx, now);
     this.drawSelectBox(ctx, ui);
     this.drawCursor(ctx, now, ui, game);
@@ -98,6 +102,9 @@ export class Hud {
         ctx.fillText(tag, p.x, p.y - size - 5.5 * k);
         ctx.font = `700 ${size}px Rajdhani, "Segoe UI", sans-serif`;
       }
+      ctx.font = `${l.type === 'village' ? 500 : 700} ${size}px Rajdhani, "Segoe UI", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.lineWidth = 3.5;
       ctx.strokeStyle = 'rgba(10,12,10,0.85)';
       ctx.lineJoin = 'round';
@@ -109,6 +116,49 @@ export class Hud {
         ctx.fillRect(p.x - tw / 2, p.y + size * 0.55, tw, 2);
       }
     }
+  }
+
+  drawSieges(ctx, game, k) {
+    for (const s of game.sieges.values()) {
+      const l = s.loc;
+      const lift = l.type === 'capital' ? 70 : l.type === 'city' ? 48 : l.type === 'fort' ? 50 : 22;
+      const p = this.proj(l.x, this.map.heightAt(l.x, l.y) + lift, l.y);
+      if (p.behind) continue;
+      ctx.font = `700 ${14 * k}px Rajdhani, "Segoe UI", sans-serif`;
+      const tw = ctx.measureText(l.name.toUpperCase()).width;
+      this.siegeRing(ctx, p.x + tw / 2 + 24 * k, p.y, s, k);
+    }
+  }
+
+  siegeRing(ctx, x, y, s, k) {
+    const frac = clamp(s.progress / s.need, 0, 1);
+    const mine = s.side === LEAF;
+    const r = 13 * k;
+    const now = performance.now() / 1000;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(10,10,8,0.85)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
+    ctx.strokeStyle = mine ? '#6ee07a' : '#ff5a4a';
+    ctx.lineWidth = 4 * k;
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 ${Math.round(10 * k)}px Rajdhani, "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(frac * 100) + '%', x, y + 0.5);
+    const tag = mine ? 'CAPTURING' : 'UNDER SIEGE';
+    ctx.font = `700 ${Math.round(11 * k)}px Rajdhani, "Segoe UI", sans-serif`;
+    ctx.globalAlpha = mine ? 1 : 0.65 + 0.35 * Math.sin(now * 6);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    ctx.strokeText(tag, x, y + r + 11 * k);
+    ctx.fillStyle = mine ? '#9dffb2' : '#ff8a7a';
+    ctx.fillText(tag, x, y + r + 11 * k);
+    ctx.restore();
   }
 
   // ---------------------------------------------------------------- paths
@@ -449,26 +499,27 @@ export class Hud {
   drawFloats(ctx, now) {
     const t = performance.now() / 1000;
     this.floats = this.floats.filter((f) => t - f.t < 2.6);
+    if (!this.floats.length) return;
+    const size = Math.round(15 * this.k);
+    ctx.font = `700 ${size}px Rajdhani, "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+    const W = window.innerWidth;
+    const H = window.innerHeight;
     for (const f of this.floats) {
       const age = t - f.t;
       const gh = this.map.heightAt(f.x, f.y);
       const p = this.proj(f.x, gh + 80, f.y);
-      if (p.behind) continue;
-      const a = age < 0.2 ? age / 0.2 : clamp(1 - (age - 1.6) / 1, 0, 1);
-      const scale = age < 0.2 ? 0.6 + (age / 0.2) * 0.5 : 1.1 - Math.min(0.1, (age - 0.2) * 0.1);
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.font = `700 ${15 * scale * this.k}px Rajdhani, "Segoe UI", sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-      const y = p.y - age * 22;
+      if (p.behind || p.x < -80 || p.x > W + 80 || p.y < -40 || p.y > H + 40) continue;
+      ctx.globalAlpha = age < 0.2 ? age / 0.2 : clamp(1 - (age - 1.6) / 1, 0, 1);
+      const y = p.y - age * 22 - (age < 0.2 ? (0.2 - age) * 30 : 0);
       ctx.strokeText(f.text, p.x, y);
       ctx.fillStyle = f.side === LEAF ? '#9dffb2' : f.side === STONE ? '#ffab9a' : '#fff';
       ctx.fillText(f.text, p.x, y);
-      ctx.restore();
     }
+    ctx.globalAlpha = 1;
   }
 
   drawSelectBox(ctx, ui) {
