@@ -56,6 +56,7 @@ export class Combat {
         p *= 1 + 0.12 * Math.min(3, mates);
       }
     }
+    if (u.side === LEAF) p *= game.diff.playerPower || 1;
     if (u.surrounded) p *= 0.75;
     if (u.shakenUntil > game.time) p *= 0.85;
     if (game.collapsing[u.side]) p *= u.side === STONE ? 0.88 : 0.96;

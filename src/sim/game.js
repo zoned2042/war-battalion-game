@@ -373,6 +373,25 @@ export class Game {
     }
   }
 
+  // Idle player battalions next to a struggling fight join it on their own.
+  autoSupport() {
+    for (const b of this.combat.battles) {
+      if (b.over) continue;
+      const leafAtt = b.attSide === LEAF;
+      const ours = leafAtt ? b.attackers : b.defenders;
+      if (!ours.length || (leafAtt ? b.adv : 1 - b.adv) > 0.65) continue;
+      for (const u of this.units) {
+        if (!u.alive || u.side !== LEAF || u.battle || u.routed || u.moving || u.type === 'medical') continue;
+        if (u.order.type !== 'idle' && u.order.type !== 'defend') continue;
+        if (u.soldiers / u.max < 0.4 || u.org < 0.4) continue;
+        if (Math.hypot(u.x - b.x, u.y - b.y) > WORLD.CELL * 2.6) continue;
+        if (this.orders.reinforce(u, ours[0])) {
+          this.emit('feed', { kind: 'good', icon: '→', text: `${u.short} moves up to support ${ours[0].short}`, unit: u });
+        }
+      }
+    }
+  }
+
   end(winner, reason) {
     if (this.over) return;
     this.over = { winner, reason, time: this.time };
@@ -412,6 +431,7 @@ export class Game {
     if (this.acc.hour >= 1) {
       this.acc.hour = 0;
       for (const u of this.units) if (u.alive) this.orders.refresh(u);
+      this.autoSupport();
       this.checkObjectives();
     }
     this.ai.update();

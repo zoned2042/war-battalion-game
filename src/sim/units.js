@@ -326,7 +326,8 @@ export function updateRecovery(game, u, dt) {
   const friendlyLoc = loc && c.owner === u.side && !u.surrounded;
   const collapse = game.collapsing[u.side] ? (u.side === LEAF ? 0.85 : 0.5) : 1;
   if (!u.surrounded) {
-    const orgRate = (u.moving ? 0.03 : 0.07) * (u.morale < 0.3 ? 0.6 : 1);
+    const boost = u.side === LEAF ? game.diff.playerHeal || 1 : 1;
+    const orgRate = (u.moving ? 0.03 : 0.07) * (u.morale < 0.3 ? 0.6 : 1) * boost;
     u.org = Math.min(1, u.org + orgRate * dt);
     let mr = 0.006;
     if (friendlyLoc) mr += game.locMorale(loc);

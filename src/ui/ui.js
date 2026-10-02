@@ -566,7 +566,13 @@ export class UI {
     const side = u.side === LEAF ? 'leaf' : 'stone';
     let action = '';
     if (u.side === STONE && this.commandable().length)
-      action = '<div style="color:#ff8a6a;font-weight:700">Click to ATTACK</div>';
+      {
+        const mine = this.commandable().reduce((s, m) => s + m.soldiers * (0.3 + 0.7 * m.org) * (0.45 + 0.55 * m.morale), 0) * (game.diff.playerPower || 1);
+        const theirs = game.unitsInCell(u.cell).filter((e) => e.side === STONE && !e.routed).reduce((s, e) => s + e.soldiers * (0.3 + 0.7 * e.org) * (0.45 + 0.55 * e.morale) * (1 + 0.4 * e.entrench), 0) * game.combat.terrainDefense(u.cell) * 1.1;
+        const r = mine / Math.max(1, theirs);
+        const [txt, col] = r > 1.4 ? ['Good odds — attack!', '#7dffa0'] : r > 0.9 ? ['Even fight — bring reinforcements', '#ffd34d'] : ['Bad odds — attack with more battalions', '#ff8a6a'];
+        action = `<div style="color:${col};font-weight:700">Click to ATTACK · ${txt}</div>`;
+      }
     else if (u.side === LEAF && this.mode === 'reinforce')
       action = '<div style="color:#5cd4ff;font-weight:700">Click to REINFORCE</div>';
     const gen = game.general(u);

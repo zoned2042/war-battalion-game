@@ -85,9 +85,9 @@ export const TRAITS = {
 };
 
 export const DIFFICULTY = {
-  easy: { label: 'Recruit', enemyStrength: 0.62, aiThink: 4.5, aiAggro: 0.4, enemyReinf: 0.45, grace: 48 },
-  normal: { label: 'Officer', enemyStrength: 0.78, aiThink: 3.2, aiAggro: 0.6, enemyReinf: 0.7, grace: 30 },
-  hard: { label: 'General', enemyStrength: 0.95, aiThink: 2.2, aiAggro: 0.9, enemyReinf: 1.0, grace: 12 },
+  easy: { label: 'Recruit', enemyStrength: 0.62, aiThink: 4.5, aiAggro: 0.4, enemyReinf: 0.45, grace: 48, playerPower: 1.6, playerHeal: 2 },
+  normal: { label: 'Officer', enemyStrength: 0.78, aiThink: 3.2, aiAggro: 0.6, enemyReinf: 0.7, grace: 30, playerPower: 1.3, playerHeal: 1.5 },
+  hard: { label: 'General', enemyStrength: 0.95, aiThink: 2.2, aiAggro: 0.9, enemyReinf: 1.0, grace: 12, playerPower: 1.05, playerHeal: 1 },
 };
 
 // Approximate x of the starting front line for a given y.
