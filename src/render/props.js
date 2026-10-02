@@ -69,6 +69,7 @@ export class Props {
     this.buildBridges();
     this.buildFlags();
     this.buildBeacons();
+    this.buildRocks();
   }
 
   slope(x, y) {
@@ -155,6 +156,40 @@ export class Props {
     this.conifers = place(conifer, spotsC);
     this.leafy = place(leafy, spotsL);
     this.treeCount = spotsC.length + spotsL.length;
+  }
+
+  // Boulders scattered over rocky slopes give the mountains some bite.
+  buildRocks() {
+    const map = this.map;
+    const rng = new Rng(map.seed * 23 + 9);
+    const spots = [];
+    for (let i = 0; i < 26000 && spots.length < 2000 * this.quality; i++) {
+      const x = rng.float(0, W);
+      const y = rng.float(0, H);
+      const h = map.heightAt(x, y);
+      if (h < 38 || this.mask.at(x, y) || this.nearTown(x, y, 10)) continue;
+      const slope = this.slope(x, y);
+      if (slope < 0.35 && h < 70) continue;
+      spots.push([x, h, y, rng.float(0.9, 2.8) * (h > 120 ? 1.2 : 1), rng.float(0, Math.PI * 2), rng.float(0.75, 1.05)]);
+    }
+    const geo = new THREE.DodecahedronGeometry(1.6, 0);
+    const mat = new THREE.MeshStandardMaterial({ color: '#9a9184', roughness: 0.95, flatShading: true });
+    const mesh = new THREE.InstancedMesh(geo, mat, spots.length);
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    const c = new THREE.Color();
+    spots.forEach(([x, h, y, sc, rot, br], i) => {
+      e.set(rot * 0.7, rot, rot * 0.3);
+      q.setFromEuler(e);
+      m.compose(new THREE.Vector3(x, h + sc * 0.3, y), q, new THREE.Vector3(sc * 1.3, sc * 0.8, sc));
+      mesh.setMatrixAt(i, m);
+      c.setRGB(br, br * 0.97, br * 0.93);
+      mesh.setColorAt(i, c);
+    });
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    this.scene.add(mesh);
   }
 
   buildTowns() {

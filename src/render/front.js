@@ -25,7 +25,7 @@ const CORE_FS = /* glsl */ `
     float edge = smoothstep(0.5, 0.7, a);
     float flow = 0.5 + 0.5 * sin(vRib.x * 0.09 - time * 4.0);
     vec3 core = mix(vec3(1.0, 0.42, 0.08), vec3(1.0, 0.86, 0.45), flow * flow);
-    vec3 col = mix(core * 1.6, vec3(0.12, 0.05, 0.02), edge);
+    vec3 col = mix(core * 1.35, vec3(0.12, 0.05, 0.02), edge);
     float alpha = 1.0 - smoothstep(0.92, 1.0, a);
     gl_FragColor = vec4(col, alpha);
     #include <tonemapping_fragment>
@@ -194,7 +194,7 @@ export class FrontLine {
     }
     this.time.value = now;
     const z = Math.min(1, Math.max(0, (camDist - 300) / 1800));
-    this.glowStrength.value = 0.55 + z * 0.35;
-    this.curtainStrength.value = 0.4 + z * 0.3;
+    this.glowStrength.value = 0.4 + z * 0.45;
+    this.curtainStrength.value = 0.3 + z * 0.35;
   }
 }

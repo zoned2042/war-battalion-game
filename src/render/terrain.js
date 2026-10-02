@@ -395,6 +395,7 @@ export class Terrain {
       map: this.baseTex,
       roughness: 0.94,
       metalness: 0.0,
+      flatShading: true,
     });
     const ownTex = this.ownTex;
     const detailTex = this.detailTex;
@@ -418,7 +419,8 @@ export class Terrain {
           float det = texture2D(detailMap, vWPos.xz * 0.019).r * 0.55 + texture2D(detailMap, vWPos.xz * 0.0043).r * 0.45;
           diffuseColor.rgb *= 0.8 + det * 0.4;
           vec4 own = texture2D(ownMap, vMapUv);
-          diffuseColor.rgb = mix(diffuseColor.rgb, own.rgb, own.a);`,
+          float hk = 1.0 - 0.6 * smoothstep(45.0, 150.0, vWPos.y);
+          diffuseColor.rgb = mix(diffuseColor.rgb, own.rgb, own.a * hk);`,
         );
     };
     const mesh = new THREE.Mesh(this.geometry, mat);

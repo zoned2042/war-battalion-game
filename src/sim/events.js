@@ -152,9 +152,14 @@ export class BattlefieldEvents {
       return;
     }
     const map = game.map;
+    // muster at the capital, or the safest friendly town if it is lost or besieged
+    const safe = (l) => l.owner === side && !game.enemiesInCell(side, l.cell).length && !game.sieges.has(l.cell);
     let loc = map.locByKey[CAPITAL[side]];
-    if (loc.owner !== side) {
-      loc = map.locations.find((l) => l.owner === side && (l.type === 'city' || l.type === 'fort'));
+    if (!safe(loc)) {
+      const home = loc;
+      loc = map.locations
+        .filter((l) => (l.type === 'city' || l.type === 'fort') && safe(l))
+        .sort((a, b) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(b.x - home.x, b.y - home.y))[0];
       if (!loc) return;
     }
     const [name, short, type] = list[this.reinfIdx[side]++];
