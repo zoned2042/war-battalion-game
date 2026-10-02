@@ -7,7 +7,7 @@ import { strengthFrac } from './units.js';
 export class BattlefieldEvents {
   constructor(game) {
     this.game = game;
-    this.next = 16 + Math.random() * 8;
+    this.next = 40 + Math.random() * 12;
     this.barrages = [];
     this.nextReinf = { [LEAF]: 54, [STONE]: 54 / game.diff.enemyReinf };
     this.reinfIdx = { [LEAF]: 0, [STONE]: 0 };
@@ -29,7 +29,7 @@ export class BattlefieldEvents {
       }
     }
     if (game.time < this.next) return;
-    this.next = game.time + 24 + Math.random() * 22;
+    this.next = game.time + 45 + Math.random() * 30;
     const options = [
       ['rain', w.type === 'clear' ? 1 : 0],
       ['fog', w.type === 'clear' ? 0.9 : 0],

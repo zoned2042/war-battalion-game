@@ -25,7 +25,7 @@ import { Territory } from './territory.js';
 import { EnemyAI } from './ai.js';
 import { BattlefieldEvents } from './events.js';
 
-const SIEGE_HOURS = { capital: 20, city: 8, fort: 12, bridge: 6 };
+const SIEGE_HOURS = { capital: 28, city: 10, fort: 14, bridge: 8 };
 
 export class Game {
   constructor(map, difficulty = 'normal') {

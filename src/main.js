@@ -102,7 +102,7 @@ class App {
   }
 
   setupTitle() {
-    let diff = 'normal';
+    let diff = 'easy';
     document.querySelectorAll('#difficulty button').forEach((b) =>
       b.addEventListener('click', () => {
         diff = b.dataset.diff;

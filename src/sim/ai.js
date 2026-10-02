@@ -181,6 +181,12 @@ export class EnemyAI {
       }
     }
 
+    // early on the enemy only holds its line, giving the player time to learn
+    if (game.time < (game.diff.grace || 0)) {
+      this.holdLine(mine, foes, true);
+      return;
+    }
+
     // 5. hunt weak or isolated battalions near the front
     for (const f of foes) {
       if (f.routed) continue;
@@ -276,7 +282,7 @@ export class EnemyAI {
     game.emit('banner', { text: 'ENEMY OFFENSIVE', sub: `Stone forces are pushing toward ${best.name}`, kind: 'bad' });
   }
 
-  holdLine(mine, foes) {
+  holdLine(mine, foes, passive = false) {
     const game = this.game;
     const map = game.map;
     const orders = game.orders;
@@ -327,7 +333,7 @@ export class EnemyAI {
       // probe: attack an adjacent weak enemy if odds look good
       const adjacentFoes = foes.filter((f) => !f.routed && Math.hypot(f.x - u.x, f.y - u.y) < WORLD.CELL * 2.2);
       const prey = adjacentFoes.sort((a, b) => this.power(a) - this.power(b))[0];
-      if (prey) {
+      if (prey && !passive) {
         const odds = (this.power(u) * this.aggression(u)) / (this.power(prey) * game.combat.terrainDefense(prey.cell));
         if (odds > 1.4 || (odds > 0.95 && Math.random() < 0.1 * this.aggression(u))) {
           if (orders.attack(u, { unit: prey })) {
@@ -337,7 +343,7 @@ export class EnemyAI {
         }
       }
       // push into empty enemy cells next to the line
-      if (!adjacentFoes.length && Math.random() < 0.3 * this.aggression(u)) {
+      if (!passive && !adjacentFoes.length && Math.random() < 0.3 * this.aggression(u)) {
         const enemyAdj = map.cells[u.cell].nbrs
           .map((id) => map.cells[id])
           .filter((c) => c.passable && c.owner !== this.side && !game.enemiesInCell(this.side, c.id).length);

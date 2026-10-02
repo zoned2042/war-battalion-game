@@ -8,8 +8,8 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const HINTS = {
-  none: 'Click one of your <b style="color:#7dffa0">green battalions</b> to select it · Drag to pan · Scroll to zoom',
-  move: 'Click the map to <b>MOVE</b> · Click a <b style="color:#ff8a6a">red battalion</b> to <b>ATTACK</b> · Shift-click to add battalions',
+  none: '<b>Step 1:</b> click one of your <b style="color:#7dffa0">green battalions</b> (or a name in the left list)',
+  move: '<b>Step 2:</b> click a <b style="color:#ff8a6a">red battalion</b> to attack it, or click the map to move there',
   attack: 'Click an <b style="color:#ff8a6a">enemy battalion</b> or enemy ground to <b>ATTACK</b> · Esc to cancel',
   reinforce:
     'Click a <b style="color:#7dffa0">friendly battalion</b> or a battle to <b>REINFORCE</b> it · Esc to cancel',
@@ -689,6 +689,9 @@ export class UI {
 
   // ---------------------------------------------------------------- feed + banners
   addFeed(item) {
+    // keep the report list to things the player should act on or celebrate
+    const important = /captured|fallen|destroyed|surrender|surrounded|siege|under attack|repulsed|forced to retreat|Reinforcements arrive|wounded|offensive|breakthrough attempt|war begins|Objectives|rain|Fog|counterattack|Ambush|Surprise/i;
+    if (!item.alert && !important.test(item.text)) return;
     const d = this.game.dateString();
     item.when = `D${d.day} ${d.hour}`;
     for (const f of this.feed) f.fresh = false;
