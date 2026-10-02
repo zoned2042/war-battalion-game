@@ -146,7 +146,12 @@ export class Orders {
     u.order = { type: 'reinforce', unit: t.id, cell };
     setPath(game, u, path);
     if (u.side === LEAF && t.battle) {
-      game.emit('feed', { kind: 'info', icon: '→', text: `${u.short} → ${t.short}: reinforcements on the way`, unit: u });
+      game.emit('feed', {
+        kind: 'info',
+        icon: '→',
+        text: `${u.short} → ${t.short}: reinforcements on the way`,
+        unit: u,
+      });
     }
     return true;
   }

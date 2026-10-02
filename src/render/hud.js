@@ -76,7 +76,8 @@ export class Hud {
       if (l.type === 'bridge' && !isObj && dist > 900) continue;
       const lift = l.type === 'capital' ? 70 : l.type === 'city' ? 48 : l.type === 'fort' ? 50 : 22;
       const p = this.proj(l.x, map.heightAt(l.x, l.y) + lift, l.y);
-      if (p.behind || p.x < -100 || p.y < -50 || p.x > window.innerWidth + 100 || p.y > window.innerHeight + 50) continue;
+      if (p.behind || p.x < -100 || p.y < -50 || p.x > window.innerWidth + 100 || p.y > window.innerHeight + 50)
+        continue;
       const owner = l.owner;
       const col = owner === LEAF ? '#bff5c9' : owner === STONE ? '#ffc9bd' : '#eeeeee';
       const size = (l.type === 'capital' ? 17 : l.type === 'village' ? 11 : 14) * k;
@@ -308,7 +309,6 @@ export class Hud {
       ctx.moveTo(x, y + h / 2);
       ctx.lineTo(foot.x, foot.y);
       ctx.stroke();
-      const side = SIDES[u.side];
       const alpha = u.routed ? 0.75 : 1;
       ctx.globalAlpha = alpha;
       // body
@@ -320,7 +320,11 @@ export class Hud {
       ctx.roundRect(x - w / 2, y - h / 2, w, h, 3);
       ctx.fill();
       ctx.lineWidth = selected ? 2.6 : 1.4;
-      ctx.strokeStyle = selected ? `rgba(255,224,102,${0.75 + Math.sin(now * 6) * 0.25})` : hovered ? '#ffffff' : 'rgba(255,255,255,0.75)';
+      ctx.strokeStyle = selected
+        ? `rgba(255,224,102,${0.75 + Math.sin(now * 6) * 0.25})`
+        : hovered
+          ? '#ffffff'
+          : 'rgba(255,255,255,0.75)';
       ctx.stroke();
       this.symbol(ctx, u.type, x, y, w, h);
       // battalion size marker "II"

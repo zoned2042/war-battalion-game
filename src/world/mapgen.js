@@ -4,8 +4,17 @@
 import { Rng, Noise2D } from '../core/rng.js';
 import { clamp, lerp, smoothstep, distToPolyline, distToSegment, chaikin, MinHeap } from '../core/util.js';
 import {
-  WORLD, LEAF, STONE, LOCATIONS, BRIDGE_OBJECTIVES, RIVERS, RANGES, LAKES, VILLAGE_NAMES,
-  startFrontX, TERRAIN,
+  WORLD,
+  LEAF,
+  STONE,
+  LOCATIONS,
+  BRIDGE_OBJECTIVES,
+  RIVERS,
+  RANGES,
+  LAKES,
+  VILLAGE_NAMES,
+  startFrontX,
+  TERRAIN,
 } from '../data/config.js';
 
 const { W, H, MARGIN, CELL, HM_STEP } = WORLD;
@@ -115,7 +124,12 @@ export class GameMap {
         const db = (sites[b][0] - px) ** 2 + (sites[b][1] - py) ** 2;
         return da - db;
       });
-      let verts = [[0, 0], [W, 0], [W, H], [0, H]];
+      let verts = [
+        [0, 0],
+        [W, 0],
+        [W, H],
+        [0, H],
+      ];
       let labels = [-1, -1, -1, -1];
       for (const j of cand) {
         const [qx, qy] = sites[j];
@@ -488,10 +502,24 @@ export class GameMap {
 
   buildRoads() {
     const pairs = [
-      ['sennai', 'osk'], ['sennai', 'halden'], ['sennai', 'mirel'], ['osk', 'tamsk'], ['tamsk', 'halden'],
-      ['osk', 'arden'], ['arden', 'mirel'], ['osk', 'drav'], ['tamsk', 'kazan'], ['kazan', 'vorsk'],
-      ['kazan', 'drav'], ['drav', 'kharzad'], ['drav', 'ketzen'], ['kharzad', 'vorsk'], ['kharzad', 'brask'],
-      ['brask', 'ketzen'], ['arden', 'ketzen'], ['halden', 'kazan'],
+      ['sennai', 'osk'],
+      ['sennai', 'halden'],
+      ['sennai', 'mirel'],
+      ['osk', 'tamsk'],
+      ['tamsk', 'halden'],
+      ['osk', 'arden'],
+      ['arden', 'mirel'],
+      ['osk', 'drav'],
+      ['tamsk', 'kazan'],
+      ['kazan', 'vorsk'],
+      ['kazan', 'drav'],
+      ['drav', 'kharzad'],
+      ['drav', 'ketzen'],
+      ['kharzad', 'vorsk'],
+      ['kharzad', 'brask'],
+      ['brask', 'ketzen'],
+      ['arden', 'ketzen'],
+      ['halden', 'kazan'],
     ];
     for (const [ka, kb] of pairs) {
       const a = this.locByKey[ka];
@@ -526,8 +554,14 @@ export class GameMap {
         const a = this.cells[best.a];
         const b = this.cells[best.b];
         best.bridge = {
-          id: this.bridges.length, a: best.a, b: best.b, x: best.mx, y: best.my,
-          angle: Math.atan2(b.y - a.y, b.x - a.x), river: def.river, destroyedUntil: -1,
+          id: this.bridges.length,
+          a: best.a,
+          b: best.b,
+          x: best.mx,
+          y: best.my,
+          angle: Math.atan2(b.y - a.y, b.x - a.x),
+          river: def.river,
+          destroyedUntil: -1,
         };
         best.road = true;
         this.bridges.push(best.bridge);
@@ -548,7 +582,14 @@ export class GameMap {
     const rng = this.rng;
     const names = rng.shuffle(VILLAGE_NAMES.slice());
     const cand = this.cells.filter(
-      (c) => c.terrain !== 'lake' && c.terrain !== 'mountain' && c.loc === null && c.x > 60 && c.x < W - 60 && c.y > 60 && c.y < H - 60,
+      (c) =>
+        c.terrain !== 'lake' &&
+        c.terrain !== 'mountain' &&
+        c.loc === null &&
+        c.x > 60 &&
+        c.x < W - 60 &&
+        c.y > 60 &&
+        c.y < H - 60,
     );
     rng.shuffle(cand);
     let n = 0;
@@ -668,7 +709,12 @@ export class GameMap {
   finalizeCells() {
     for (const c of this.cells) {
       c.h = this.heightAt(c.x, c.y);
-      if (c.terrain !== 'lake' && c.loc === null && c.h < WORLD.WATER + 2.5 && LAKES.some((l) => Math.hypot(c.x - l.x, c.y - l.y) < l.r + 70)) {
+      if (
+        c.terrain !== 'lake' &&
+        c.loc === null &&
+        c.h < WORLD.WATER + 2.5 &&
+        LAKES.some((l) => Math.hypot(c.x - l.x, c.y - l.y) < l.r + 70)
+      ) {
         c.terrain = 'lake';
       }
       if (c.terrain === 'lake') c.owner = -1;
@@ -715,5 +761,3 @@ export class GameMap {
     return (bd < 60 ? 'at ' : 'near ') + best.name;
   }
 }
-
-export { LEAF, STONE };

@@ -117,7 +117,14 @@ export class Props {
         if (this.slope(px, py) > 1.5) continue;
         if (this.nearTown(px, py, 4)) continue;
         const isConifer = h > 42 || rng.chance(py < 700 ? 0.55 : 0.3);
-        (isConifer ? spotsC : spotsL).push([px, h, py, rng.float(0.55, 1.0), rng.float(0, Math.PI * 2), rng.float(0.82, 1.12)]);
+        (isConifer ? spotsC : spotsL).push([
+          px,
+          h,
+          py,
+          rng.float(0.55, 1.0),
+          rng.float(0, Math.PI * 2),
+          rng.float(0.82, 1.12),
+        ]);
       }
     }
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, flatShading: true });
@@ -197,7 +204,13 @@ export class Props {
           const mx = (x0 + x1) / 2;
           const my = (y0 + y1) / 2;
           if (this.mask.at(mx, my)) continue; // gates where roads enter
-          walls.push({ x: mx, y: my, len: Math.hypot(x1 - x0, y1 - y0) + 0.6, rot: -Math.atan2(y1 - y0, x1 - x0), tower: i % 4 === 0 });
+          walls.push({
+            x: mx,
+            y: my,
+            len: Math.hypot(x1 - x0, y1 - y0) + 0.6,
+            rot: -Math.atan2(y1 - y0, x1 - x0),
+            tower: i % 4 === 0,
+          });
         }
       }
     }
@@ -292,7 +305,13 @@ export class Props {
     }
     hole.closePath();
     shape.holes.push(hole);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: 11, bevelEnabled: true, bevelSize: 1.2, bevelThickness: 1.2, bevelSegments: 1 });
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: 11,
+      bevelEnabled: true,
+      bevelSize: 1.2,
+      bevelThickness: 1.2,
+      bevelSegments: 1,
+    });
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshStandardMaterial({ color: '#9f988a', roughness: 0.9, flatShading: true });
     const inner = new THREE.MeshStandardMaterial({ color: '#7d7466', roughness: 0.9, flatShading: true });
@@ -395,9 +414,17 @@ export class Props {
       const h = map.heightAt(l.x, l.y);
       const top = l.type === 'capital' ? 52 : l.type === 'fort' ? 34 : 30;
       const sx = l.type === 'capital' ? 1.4 : 1;
-      m.compose(new THREE.Vector3(l.x, h + (l.type === 'fort' ? 10 : 0), l.y), new THREE.Quaternion(), new THREE.Vector3(sx, top / 30, sx));
+      m.compose(
+        new THREE.Vector3(l.x, h + (l.type === 'fort' ? 10 : 0), l.y),
+        new THREE.Quaternion(),
+        new THREE.Vector3(sx, top / 30, sx),
+      );
       poles.setMatrixAt(i, m);
-      m.compose(new THREE.Vector3(l.x, h + top + (l.type === 'fort' ? 10 : 0) - 4.5, l.y), new THREE.Quaternion(), new THREE.Vector3(sx, sx, sx));
+      m.compose(
+        new THREE.Vector3(l.x, h + top + (l.type === 'fort' ? 10 : 0) - 4.5, l.y),
+        new THREE.Quaternion(),
+        new THREE.Vector3(sx, sx, sx),
+      );
       flags.setMatrixAt(i, m);
     });
     poles.castShadow = true;

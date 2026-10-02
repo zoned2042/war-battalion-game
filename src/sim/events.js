@@ -1,7 +1,7 @@
 // Battlefield events: weather, artillery, reinforcements, wounded generals,
 // blown bridges, surprise attacks and morale collapses.
 
-import { LEAF, STONE, WORLD, CAPITAL, REINFORCEMENT_NAMES, SIDES } from '../data/config.js';
+import { LEAF, STONE, WORLD, CAPITAL, REINFORCEMENT_NAMES } from '../data/config.js';
 import { strengthFrac } from './units.js';
 
 export class BattlefieldEvents {
@@ -23,7 +23,8 @@ export class BattlefieldEvents {
     this.updateBarrages();
     for (const side of [LEAF, STONE]) {
       if (game.time >= this.nextReinf[side]) {
-        this.nextReinf[side] = game.time + (side === LEAF ? 62 : 62 / game.diff.enemyReinf) * (0.85 + Math.random() * 0.3);
+        this.nextReinf[side] =
+          game.time + (side === LEAF ? 62 : 62 / game.diff.enemyReinf) * (0.85 + Math.random() * 0.3);
         this.spawnReinforcement(side);
       }
     }
@@ -167,7 +168,8 @@ export class BattlefieldEvents {
       text: mine ? `Reinforcements arrive: ${name} at ${loc.name}` : `Enemy reinforcements spotted at ${loc.name}`,
       unit: u,
     });
-    if (mine) game.emit('banner', { text: 'REINFORCEMENTS ARRIVE', sub: `${name} is ready at ${loc.name}`, kind: 'good' });
+    if (mine)
+      game.emit('banner', { text: 'REINFORCEMENTS ARRIVE', sub: `${name} is ready at ${loc.name}`, kind: 'good' });
   }
 
   topUp(side) {
@@ -193,7 +195,9 @@ export class BattlefieldEvents {
 
   woundGeneral() {
     const game = this.game;
-    const armies = Object.values(game.armies).filter((a) => a.general && game.generals[a.general].woundedUntil < game.time);
+    const armies = Object.values(game.armies).filter(
+      (a) => a.general && game.generals[a.general].woundedUntil < game.time,
+    );
     if (!armies.length) return;
     const a = armies[Math.floor(Math.random() * armies.length)];
     const g = game.generals[a.general];
@@ -216,30 +220,48 @@ export class BattlefieldEvents {
 
   blowBridge() {
     const game = this.game;
-    const cand = game.map.bridges.filter((b) => b.destroyedUntil < game.time && this.frontDistance(b.x, b.y) < WORLD.CELL * 5);
+    const cand = game.map.bridges.filter(
+      (b) => b.destroyedUntil < game.time && this.frontDistance(b.x, b.y) < WORLD.CELL * 5,
+    );
     if (!cand.length) return;
     const br = cand[Math.floor(Math.random() * cand.length)];
     br.destroyedUntil = game.time + 40 + Math.random() * 20;
     const place = game.map.placeName(br.x, br.y);
     game.emit('bridge', { bridge: br, destroyed: true });
     game.emit('explosion', { x: br.x, y: br.y, big: true });
-    game.emit('feed', { kind: 'info', icon: '💥', text: `Bridge ${place} destroyed! Crossing is slow and costly`, x: br.x, y: br.y });
+    game.emit('feed', {
+      kind: 'info',
+      icon: '💥',
+      text: `Bridge ${place} destroyed! Crossing is slow and costly`,
+      x: br.x,
+      y: br.y,
+    });
     game.emit('banner', { text: 'BRIDGE DESTROYED', sub: `The crossing ${place} is down`, kind: 'info' });
   }
 
   surpriseAttack() {
     const game = this.game;
-    const attackers = game.units.filter((u) => u.alive && u.side === STONE && !u.battle && !u.routed && strengthFrac(u) > 0.6 && u.task?.kind !== 'garrison');
+    const attackers = game.units.filter(
+      (u) =>
+        u.alive && u.side === STONE && !u.battle && !u.routed && strengthFrac(u) > 0.6 && u.task?.kind !== 'garrison',
+    );
     for (const a of attackers.sort(() => Math.random() - 0.5)) {
       const t = game.units.find(
-        (v) => v.alive && v.side === LEAF && !v.battle && !v.routed && Math.hypot(v.x - a.x, v.y - a.y) < WORLD.CELL * 2.6,
+        (v) =>
+          v.alive && v.side === LEAF && !v.battle && !v.routed && Math.hypot(v.x - a.x, v.y - a.y) < WORLD.CELL * 2.6,
       );
       if (!t) continue;
       if (!game.orders.attack(a, { unit: t })) continue;
       a.task = { kind: 'hunt', target: t.id, until: game.time + 16 };
       t.surprisedUntil = game.time + 5;
       t.org = Math.max(0, t.org - 0.12);
-      game.emit('feed', { kind: 'bad', icon: '⚠', text: `Surprise attack! ${a.short} ambushes ${t.short}!`, unit: t, alert: true });
+      game.emit('feed', {
+        kind: 'bad',
+        icon: '⚠',
+        text: `Surprise attack! ${a.short} ambushes ${t.short}!`,
+        unit: t,
+        alert: true,
+      });
       game.emit('float', { x: t.x, y: t.y, text: 'AMBUSH!', side: STONE });
       return;
     }
@@ -252,9 +274,13 @@ export class BattlefieldEvents {
     const u = fighting.sort((a, b) => a.morale - b.morale)[0];
     u.morale = Math.max(0, u.morale - 0.25);
     const mine = u.side === LEAF;
-    game.emit('feed', { kind: mine ? 'bad' : 'good', icon: '⚠', text: `Morale collapse in ${u.short}!`, unit: u, alert: mine });
+    game.emit('feed', {
+      kind: mine ? 'bad' : 'good',
+      icon: '⚠',
+      text: `Morale collapse in ${u.short}!`,
+      unit: u,
+      alert: mine,
+    });
     game.emit('float', { x: u.x, y: u.y, text: 'MORALE COLLAPSE', side: 1 - u.side });
   }
 }
-
-export { SIDES };

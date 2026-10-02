@@ -4,10 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>Battalion Command — The Kazan Front</title>
-    <meta name="description" content="Command battalions on a living 3D front line. Push the enemy back, capture their strongholds, win the war." />
+    <meta
+      name="description"
+      content="Command battalions on a living 3D front line. Push the enemy back, capture their strongholds, win the war."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
@@ -25,8 +31,14 @@
         </div>
         <div id="weather" class="chip" title="Weather">☀ Clear</div>
         <div class="control-bar" title="Territory controlled">
-          <div class="cb-labels"><span class="leaf">LEAF <b id="leafPct">50%</b></span><span id="collapse" class="collapse"></span><span class="stone"><b id="stonePct">50%</b> STONE</span></div>
-          <div class="cb-track"><div id="leafBar"></div><div class="cb-mid"></div></div>
+          <div class="cb-labels">
+            <span class="leaf">LEAF <b id="leafPct">50%</b></span
+            ><span id="collapse" class="collapse"></span><span class="stone"><b id="stonePct">50%</b> STONE</span>
+          </div>
+          <div class="cb-track">
+            <div id="leafBar"></div>
+            <div class="cb-mid"></div>
+          </div>
         </div>
         <div id="objectives" class="objectives" title="Leaf objectives: capture all of them, or take Kharzad"></div>
         <div class="time-controls">
@@ -50,11 +62,21 @@
       <footer id="orders">
         <div id="hint" class="hint"></div>
         <div class="order-buttons">
-          <button data-order="move" class="obtn"><span class="key">M</span><span class="oic">➜</span><span class="olabel">MOVE</span></button>
-          <button data-order="attack" class="obtn attack"><span class="key">A</span><span class="oic">⚔</span><span class="olabel">ATTACK</span></button>
-          <button data-order="defend" class="obtn defend"><span class="key">D</span><span class="oic">⛨</span><span class="olabel">DEFEND</span></button>
-          <button data-order="retreat" class="obtn retreat"><span class="key">R</span><span class="oic">↩</span><span class="olabel">RETREAT</span></button>
-          <button data-order="reinforce" class="obtn reinforce"><span class="key">F</span><span class="oic">✚</span><span class="olabel">REINFORCE</span></button>
+          <button data-order="move" class="obtn">
+            <span class="key">M</span><span class="oic">➜</span><span class="olabel">MOVE</span>
+          </button>
+          <button data-order="attack" class="obtn attack">
+            <span class="key">A</span><span class="oic">⚔</span><span class="olabel">ATTACK</span>
+          </button>
+          <button data-order="defend" class="obtn defend">
+            <span class="key">D</span><span class="oic">⛨</span><span class="olabel">DEFEND</span>
+          </button>
+          <button data-order="retreat" class="obtn retreat">
+            <span class="key">R</span><span class="oic">↩</span><span class="olabel">RETREAT</span>
+          </button>
+          <button data-order="reinforce" class="obtn reinforce">
+            <span class="key">F</span><span class="oic">✚</span><span class="olabel">REINFORCE</span>
+          </button>
         </div>
       </footer>
 
@@ -73,13 +95,19 @@
         <h1>BATTALION<br /><span>COMMAND</span></h1>
         <div class="subtitle">The Kazan Front</div>
         <p class="premise">
-          The Stone Dominion has massed its battalions along our border. Take command of the Leaf Alliance,
-          break their front line and push them back to Kharzad.
+          The Stone Dominion has massed its battalions along our border. Take command of the Leaf Alliance, break their
+          front line and push them back to Kharzad.
         </p>
         <div class="steps">
-          <div class="step"><b>1</b><span><em>Select</em> one of your green battalions</span></div>
-          <div class="step"><b>2</b><span><em>Click</em> the map to move — or a red battalion to attack</span></div>
-          <div class="step"><b>3</b><span><em>Reinforce</em>, break their line, capture the <span class="obj">◎</span> objectives</span></div>
+          <div class="step">
+            <b>1</b><span><em>Select</em> one of your green battalions</span>
+          </div>
+          <div class="step">
+            <b>2</b><span><em>Click</em> the map to move — or a red battalion to attack</span>
+          </div>
+          <div class="step">
+            <b>3</b><span><em>Reinforce</em>, break their line, capture the <span class="obj">◎</span> objectives</span>
+          </div>
         </div>
         <div class="difficulty" id="difficulty">
           <button data-diff="easy">Recruit<small>Gentle enemy</small></button>

@@ -2,7 +2,7 @@
 // places, hunting weak battalions, reinforcing fights, counterattacking and
 // launching breakthrough attempts.
 
-import { LEAF, STONE, WORLD, CAPITAL } from '../data/config.js';
+import { STONE, WORLD, CAPITAL } from '../data/config.js';
 import { strengthFrac } from './units.js';
 
 export class EnemyAI {
@@ -122,7 +122,14 @@ export class EnemyAI {
       const helpers = mine.filter((u) => u.task?.kind === 'reinforce' && u.task.battle === b.id);
       if (ourShare < 0.55 && helpers.length < 2) {
         const cand = mine
-          .filter((u) => this.free(u) && u.task?.kind !== 'recover' && u.task?.kind !== 'garrison' && u.type !== 'medical' && strengthFrac(u) > 0.45)
+          .filter(
+            (u) =>
+              this.free(u) &&
+              u.task?.kind !== 'recover' &&
+              u.task?.kind !== 'garrison' &&
+              u.type !== 'medical' &&
+              strengthFrac(u) > 0.45,
+          )
           .filter((u) => dist(u, b) < WORLD.CELL * 7)
           .sort((a, c) => dist(a, b) - dist(c, b))[0];
         if (cand && orders.reinforce(cand, ours[0])) this.assign(cand, { kind: 'reinforce', battle: b.id }, 20);
@@ -146,7 +153,14 @@ export class EnemyAI {
       const holders = game.unitsInCell(lost.cell).filter((u) => u.side !== this.side);
       const holdP = holders.reduce((s, u) => s + this.power(u), 0);
       const cand = mine
-        .filter((u) => this.free(u) && u.task?.kind !== 'recover' && u.task?.kind !== 'garrison' && u.type !== 'medical' && strengthFrac(u) > 0.5)
+        .filter(
+          (u) =>
+            this.free(u) &&
+            u.task?.kind !== 'recover' &&
+            u.task?.kind !== 'garrison' &&
+            u.type !== 'medical' &&
+            strengthFrac(u) > 0.5,
+        )
         .filter((u) => dist(u, c) < WORLD.CELL * 9)
         .sort((a, b) => dist(a, c) - dist(b, c))
         .slice(0, 2 - already);
@@ -156,7 +170,13 @@ export class EnemyAI {
           if (orders.attack(u, { cell: lost.cell })) this.assign(u, { kind: 'counter', cell: lost.cell }, 24);
         }
         if (holders.length) {
-          game.emit('feed', { kind: 'bad', icon: '⚠', text: `Enemy counterattack ${game.map.placeName(c.x, c.y)}!`, cell: lost.cell, alert: true });
+          game.emit('feed', {
+            kind: 'bad',
+            icon: '⚠',
+            text: `Enemy counterattack ${game.map.placeName(c.x, c.y)}!`,
+            cell: lost.cell,
+            alert: true,
+          });
         }
       }
     }
@@ -165,12 +185,19 @@ export class EnemyAI {
     for (const f of foes) {
       if (f.routed) continue;
       const fp = this.power(f) * (f.battle ? 0.7 : 1) * game.combat.terrainDefense(f.cell);
-      const weakish = strengthFrac(f) < 0.55 || f.morale < 0.4 || f.surrounded || f.type === 'medical' || f.type === 'scout';
+      const weakish =
+        strengthFrac(f) < 0.55 || f.morale < 0.4 || f.surrounded || f.type === 'medical' || f.type === 'scout';
       if (!weakish) continue;
       const hunters = mine.filter((u) => u.task?.kind === 'hunt' && u.task.target === f.id);
       if (hunters.length) continue;
       const cand = mine
-        .filter((u) => this.free(u) && !['recover', 'garrison', 'reinforce'].includes(u.task?.kind) && u.type !== 'medical' && strengthFrac(u) > 0.55)
+        .filter(
+          (u) =>
+            this.free(u) &&
+            !['recover', 'garrison', 'reinforce'].includes(u.task?.kind) &&
+            u.type !== 'medical' &&
+            strengthFrac(u) > 0.55,
+        )
         .filter((u) => dist(u, f) < WORLD.CELL * 6)
         .sort((a, b) => dist(a, f) - dist(b, f))[0];
       if (!cand) continue;
@@ -224,7 +251,14 @@ export class EnemyAI {
     }
     if (!best) return;
     const group = mine
-      .filter((u) => this.free(u) && !['recover', 'garrison'].includes(u.task?.kind) && u.type !== 'medical' && strengthFrac(u) > 0.6 && u.org > 0.6)
+      .filter(
+        (u) =>
+          this.free(u) &&
+          !['recover', 'garrison'].includes(u.task?.kind) &&
+          u.type !== 'medical' &&
+          strengthFrac(u) > 0.6 &&
+          u.org > 0.6,
+      )
       .sort((a, b) => Math.hypot(a.x - best.x, a.y - best.y) - Math.hypot(b.x - best.x, b.y - best.y))
       .slice(0, 3);
     if (group.length < 2) return;
@@ -247,8 +281,12 @@ export class EnemyAI {
     const map = game.map;
     const orders = game.orders;
     const holders = mine.filter(
-      (u) => !u.battle && !u.routed && (!u.task || u.task.kind === 'hold' || game.time > u.task.until) &&
-        u.task?.kind !== 'garrison' && u.task?.kind !== 'recover',
+      (u) =>
+        !u.battle &&
+        !u.routed &&
+        (!u.task || u.task.kind === 'hold' || game.time > u.task.until) &&
+        u.task?.kind !== 'garrison' &&
+        u.task?.kind !== 'recover',
     );
     if (!holders.length) return;
     const front = this.frontCells();
@@ -343,5 +381,3 @@ export class EnemyAI {
     return cur;
   }
 }
-
-export { LEAF };

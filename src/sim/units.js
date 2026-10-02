@@ -5,7 +5,13 @@ import { UNIT_TYPES, TERRAIN, WORLD, xpLevel, LEAF } from '../data/config.js';
 
 const BASE_SPEED = 34; // world units per hour on open ground
 const SLOT_OFFSETS = [
-  [0, 0], [30, 16], [-30, 16], [0, -30], [30, -16], [-30, -16], [0, 32],
+  [0, 0],
+  [30, 16],
+  [-30, 16],
+  [0, -30],
+  [30, -16],
+  [-30, -16],
+  [0, 32],
 ];
 
 let nextUnitId = 1;

@@ -12,7 +12,7 @@ import { Hud } from './render/hud.js';
 import { UI } from './ui/ui.js';
 import { Minimap } from './ui/minimap.js';
 import { Sound } from './ui/audio.js';
-import { LEAF, STONE, WORLD } from './data/config.js';
+import { STONE } from './data/config.js';
 import { clamp, lerp } from './core/util.js';
 
 const $ = (id) => document.getElementById(id);
@@ -84,7 +84,8 @@ class App {
       await step('Ready.', 100);
     } catch (err) {
       console.error(err);
-      $('loadText').textContent = 'Could not start: ' + (err && err.message ? err.message : err) + ' — this game needs WebGL.';
+      $('loadText').textContent =
+        'Could not start: ' + (err && err.message ? err.message : err) + ' — this game needs WebGL.';
       return;
     }
     window.addEventListener('resize', () => {
@@ -125,9 +126,22 @@ class App {
     this.rig.want = { x: 1450, z: 1000, dist: 1350, yaw: 0 };
     this.ui.renderFeed();
     this.ui.renderTop();
-    this.ui.addFeed({ kind: 'info', icon: '⚑', text: 'The war begins. Hold the line and break through the Stone front.' });
-    this.ui.addFeed({ kind: 'info', icon: '◎', text: 'Objectives: Fort Kazan, the Eastern Bridge, Vorsk and Kharzad.' });
-    this.ui.banner({ text: 'THE WAR BEGINS', sub: 'Push the Stone Dominion back. Capture the ◎ objectives.', kind: 'info', big: true });
+    this.ui.addFeed({
+      kind: 'info',
+      icon: '⚑',
+      text: 'The war begins. Hold the line and break through the Stone front.',
+    });
+    this.ui.addFeed({
+      kind: 'info',
+      icon: '◎',
+      text: 'Objectives: Fort Kazan, the Eastern Bridge, Vorsk and Kharzad.',
+    });
+    this.ui.banner({
+      text: 'THE WAR BEGINS',
+      sub: 'Push the Stone Dominion back. Capture the ◎ objectives.',
+      kind: 'info',
+      big: true,
+    });
     window.__app = this;
   }
 
@@ -198,7 +212,11 @@ class App {
         const fromA = Math.random() < 0.5;
         const src = pick(pick(fromA ? A : D).front);
         const dst = pick(fromA ? D : A).center;
-        const to = [dst[0] + (Math.random() - 0.5) * 34, dst[1] + 3 + Math.random() * 4, dst[2] + (Math.random() - 0.5) * 34];
+        const to = [
+          dst[0] + (Math.random() - 0.5) * 34,
+          dst[1] + 3 + Math.random() * 4,
+          dst[2] + (Math.random() - 0.5) * 34,
+        ];
         fx.tracer(src, to, fromA ? [1, 0.82, 0.4] : [1, 0.62, 0.32], 0.12 + Math.random() * 0.1);
       }
       while (f.e > 1) {
@@ -243,7 +261,11 @@ class App {
     const rain = this.weatherMix.rain;
     rig.scene.fog.near *= 1 - fog * 0.75;
     rig.scene.fog.far *= 1 - fog * 0.62 - rain * 0.25;
-    rig.scene.fog.color.setRGB(lerp(0.79, 0.74, rain) + fog * 0.04, lerp(0.84, 0.77, rain) + fog * 0.02, lerp(0.86, 0.8, rain));
+    rig.scene.fog.color.setRGB(
+      lerp(0.79, 0.74, rain) + fog * 0.04,
+      lerp(0.84, 0.77, rain) + fog * 0.02,
+      lerp(0.86, 0.8, rain),
+    );
     rig.scene.background.copy(rig.scene.fog.color);
     rig.sun.intensity = 2.6 * (1 - rain * 0.45 - fog * 0.3);
     rig.hemi.intensity = 1.25 * (1 - rain * 0.2);
@@ -266,7 +288,13 @@ class App {
     this.terrain.update(now, game.territory.version);
     this.front.update(now, game.territory, this.rig.cam.dist);
     this.props.update(now, this.rig.cam.dist);
-    this.formations.update(now, dt, game, this.started ? this.ui.selected : [], this.ui.hover && this.ui.hover.side === STONE && this.ui.commandable().length ? this.ui.hover : null);
+    this.formations.update(
+      now,
+      dt,
+      game,
+      this.started ? this.ui.selected : [],
+      this.ui.hover && this.ui.hover.side === STONE && this.ui.commandable().length ? this.ui.hover : null,
+    );
     if (this.started) {
       this.battleFx(dt);
       this.marchDust(dt);
@@ -292,5 +320,3 @@ class App {
 const app = new App();
 window.__app = app;
 app.boot();
-
-export { LEAF, WORLD };

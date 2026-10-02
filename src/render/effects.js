@@ -153,7 +153,12 @@ export class Effects {
     geo.setAttribute('position', new THREE.BufferAttribute(this.tPos, 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('color', new THREE.BufferAttribute(this.tCol, 3).setUsage(THREE.DynamicDrawUsage));
     this.tGeo = geo;
-    const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    const mat = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
     const lines = new THREE.LineSegments(geo, mat);
     lines.frustumCulled = false;
     lines.renderOrder = 13;
@@ -164,7 +169,13 @@ export class Effects {
     this.rings = [];
     const geo = new THREE.RingGeometry(0.85, 1, 64).rotateX(-Math.PI / 2);
     for (let i = 0; i < 24; i++) {
-      const mat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const mat = new THREE.MeshBasicMaterial({
+        color: '#ffffff',
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
       const m = new THREE.Mesh(geo, mat);
       m.visible = false;
       m.renderOrder = 9;
@@ -193,11 +204,22 @@ export class Effects {
     const tex = puffTexture();
     this.clouds = [];
     for (let i = 0; i < 16; i++) {
-      const mat = new THREE.SpriteMaterial({ map: tex, color: '#ffffff', transparent: true, opacity: 0.0, depthWrite: false, fog: false });
+      const mat = new THREE.SpriteMaterial({
+        map: tex,
+        color: '#ffffff',
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false,
+        fog: false,
+      });
       const s = new THREE.Sprite(mat);
       const size = 380 + Math.random() * 420;
       s.scale.set(size, size * 0.55, 1);
-      s.position.set(Math.random() * (WORLD.W + 1200) - 600, 380 + Math.random() * 160, Math.random() * (WORLD.H + 800) - 400);
+      s.position.set(
+        Math.random() * (WORLD.W + 1200) - 600,
+        380 + Math.random() * 160,
+        Math.random() * (WORLD.H + 800) - 400,
+      );
       s.renderOrder = 30;
       scene.add(s);
       this.clouds.push({ sprite: s, speed: 6 + Math.random() * 6, base: 0.5 + Math.random() * 0.35 });
@@ -209,9 +231,34 @@ export class Effects {
   }
 
   muzzle(x, y, z) {
-    this.glow.add({ x, y, z, vx: 0, vy: 4, vz: 0, life: 0.07 + Math.random() * 0.06, s0: 5 + Math.random() * 3, s1: 3, a0: 1, c0: [1, 0.88, 0.5] });
+    this.glow.add({
+      x,
+      y,
+      z,
+      vx: 0,
+      vy: 4,
+      vz: 0,
+      life: 0.07 + Math.random() * 0.06,
+      s0: 5 + Math.random() * 3,
+      s1: 3,
+      a0: 1,
+      c0: [1, 0.88, 0.5],
+    });
     if (Math.random() < 0.25) {
-      this.smoke.add({ x, y, z, vx: (Math.random() - 0.5) * 4, vy: 3 + Math.random() * 3, vz: (Math.random() - 0.5) * 4, life: 1.2 + Math.random(), s0: 3, s1: 12, a0: 0.25, c0: [0.85, 0.85, 0.82], fadeIn: 0.1 });
+      this.smoke.add({
+        x,
+        y,
+        z,
+        vx: (Math.random() - 0.5) * 4,
+        vy: 3 + Math.random() * 3,
+        vz: (Math.random() - 0.5) * 4,
+        life: 1.2 + Math.random(),
+        s0: 3,
+        s1: 12,
+        a0: 0.25,
+        c0: [0.85, 0.85, 0.82],
+        fadeIn: 0.1,
+      });
     }
   }
 
@@ -223,13 +270,39 @@ export class Effects {
   explosion(x, z, big = false, yOverride = null) {
     const y = yOverride ?? this.ground(x, z) + 1;
     const k = big ? 1.6 : 1;
-    this.glow.add({ x, y: y + 4 * k, z, vx: 0, vy: 0, vz: 0, life: 0.3, s0: 20 * k, s1: 58 * k, a0: 0.8, c0: [1, 0.62, 0.22], c1: [0.9, 0.25, 0.05], fadePow: 1.6 });
+    this.glow.add({
+      x,
+      y: y + 4 * k,
+      z,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+      life: 0.3,
+      s0: 20 * k,
+      s1: 58 * k,
+      a0: 0.8,
+      c0: [1, 0.62, 0.22],
+      c1: [0.9, 0.25, 0.05],
+      fadePow: 1.6,
+    });
     for (let i = 0; i < 8 * k; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = 10 + Math.random() * 25;
       this.glow.add({
-        x, y: y + 2, z, vx: Math.cos(a) * sp, vy: 18 + Math.random() * 30, vz: Math.sin(a) * sp, g: -30, drag: 1.5,
-        life: 0.4 + Math.random() * 0.4, s0: 10 * k, s1: 3, a0: 0.9, c0: [1, 0.6, 0.2], c1: [0.8, 0.15, 0.05],
+        x,
+        y: y + 2,
+        z,
+        vx: Math.cos(a) * sp,
+        vy: 18 + Math.random() * 30,
+        vz: Math.sin(a) * sp,
+        g: -30,
+        drag: 1.5,
+        life: 0.4 + Math.random() * 0.4,
+        s0: 10 * k,
+        s1: 3,
+        a0: 0.9,
+        c0: [1, 0.6, 0.2],
+        c1: [0.8, 0.15, 0.05],
       });
     }
     for (let i = 0; i < 7 * k; i++) {
@@ -237,16 +310,39 @@ export class Effects {
       const sp = 4 + Math.random() * 10;
       const grey = 0.22 + Math.random() * 0.2;
       this.smoke.add({
-        x: x + Math.cos(a) * 4, y: y + 3, z: z + Math.sin(a) * 4, vx: Math.cos(a) * sp + 4, vy: 8 + Math.random() * 10, vz: Math.sin(a) * sp, drag: 0.6,
-        life: 2.6 + Math.random() * 2.2, s0: 14 * k, s1: 56 * k, a0: 0.85, c0: [grey, grey * 0.95, grey * 0.9], c1: [0.5, 0.5, 0.5], fadeIn: 0.15,
+        x: x + Math.cos(a) * 4,
+        y: y + 3,
+        z: z + Math.sin(a) * 4,
+        vx: Math.cos(a) * sp + 4,
+        vy: 8 + Math.random() * 10,
+        vz: Math.sin(a) * sp,
+        drag: 0.6,
+        life: 2.6 + Math.random() * 2.2,
+        s0: 14 * k,
+        s1: 56 * k,
+        a0: 0.85,
+        c0: [grey, grey * 0.95, grey * 0.9],
+        c1: [0.5, 0.5, 0.5],
+        fadeIn: 0.15,
       });
     }
     for (let i = 0; i < 10 * k; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = 15 + Math.random() * 30;
       this.smoke.add({
-        x, y: y + 2, z, vx: Math.cos(a) * sp, vy: 30 + Math.random() * 40, vz: Math.sin(a) * sp, g: -110,
-        life: 0.9 + Math.random() * 0.4, s0: 2.6, s1: 2.2, a0: 0.9, c0: [0.22, 0.18, 0.12], floor: y,
+        x,
+        y: y + 2,
+        z,
+        vx: Math.cos(a) * sp,
+        vy: 30 + Math.random() * 40,
+        vz: Math.sin(a) * sp,
+        g: -110,
+        life: 0.9 + Math.random() * 0.4,
+        s0: 2.6,
+        s1: 2.2,
+        a0: 0.9,
+        c0: [0.22, 0.18, 0.12],
+        floor: y,
       });
     }
     this.onBoom?.(x, z, big);
@@ -263,8 +359,18 @@ export class Effects {
   dust(x, z) {
     const y = this.ground(x, z) + 1;
     this.smoke.add({
-      x: x + (Math.random() - 0.5) * 20, y, z: z + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 4, vy: 3, vz: (Math.random() - 0.5) * 4,
-      life: 1.8, s0: 9, s1: 30, a0: 0.35, c0: [0.62, 0.55, 0.42], fadeIn: 0.2,
+      x: x + (Math.random() - 0.5) * 20,
+      y,
+      z: z + (Math.random() - 0.5) * 20,
+      vx: (Math.random() - 0.5) * 4,
+      vy: 3,
+      vz: (Math.random() - 0.5) * 4,
+      life: 1.8,
+      s0: 9,
+      s1: 30,
+      a0: 0.35,
+      c0: [0.62, 0.55, 0.42],
+      fadeIn: 0.2,
     });
   }
 

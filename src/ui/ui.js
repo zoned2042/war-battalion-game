@@ -1,6 +1,6 @@
 // Player interface: selection, orders, panels, feed, banners and modals.
 
-import { LEAF, STONE, SIDES, OBJECTIVES, TRAITS, UNIT_TYPES, TERRAIN, LOCATION_TYPES, xpLevel } from '../data/config.js';
+import { LEAF, STONE, OBJECTIVES, TRAITS, UNIT_TYPES, TERRAIN, LOCATION_TYPES, xpLevel } from '../data/config.js';
 import { unitStatus, etaHours, findPath } from '../sim/units.js';
 import { formatNum, pct, clamp } from '../core/util.js';
 
@@ -11,10 +11,45 @@ const HINTS = {
   none: 'Click one of your <b style="color:#7dffa0">green battalions</b> to select it · Drag to pan · Scroll to zoom',
   move: 'Click the map to <b>MOVE</b> · Click a <b style="color:#ff8a6a">red battalion</b> to <b>ATTACK</b> · Shift-click to add battalions',
   attack: 'Click an <b style="color:#ff8a6a">enemy battalion</b> or enemy ground to <b>ATTACK</b> · Esc to cancel',
-  reinforce: 'Click a <b style="color:#7dffa0">friendly battalion</b> or a battle to <b>REINFORCE</b> it · Esc to cancel',
+  reinforce:
+    'Click a <b style="color:#7dffa0">friendly battalion</b> or a battle to <b>REINFORCE</b> it · Esc to cancel',
   enemy: 'Enemy battalion — select your own battalions, then click this one to attack it',
   routed: 'This battalion is routed and regrouping — it will take orders once it recovers',
 };
+
+function sameShape(a, b) {
+  const ac = a.childNodes;
+  const bc = b.childNodes;
+  if (ac.length !== bc.length) return false;
+  for (let i = 0; i < ac.length; i++) {
+    const x = ac[i];
+    const y = bc[i];
+    if (x.nodeType !== y.nodeType) return false;
+    if (x.nodeType === 1) {
+      if (x.tagName !== y.tagName) return false;
+      if (x.tagName !== 'CANVAS' && !sameShape(x, y)) return false;
+    }
+  }
+  return true;
+}
+
+function patch(a, b) {
+  const ac = a.childNodes;
+  const bc = b.childNodes;
+  for (let i = 0; i < ac.length; i++) {
+    const x = ac[i];
+    const y = bc[i];
+    if (x.nodeType === 3) {
+      if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue;
+      continue;
+    }
+    if (x.nodeType !== 1) continue;
+    for (const attr of y.attributes)
+      if (x.getAttribute(attr.name) !== attr.value) x.setAttribute(attr.name, attr.value);
+    for (const attr of [...x.attributes]) if (!y.hasAttribute(attr.name)) x.removeAttribute(attr.name);
+    if (x.tagName !== 'CANVAS') patch(x, y);
+  }
+}
 
 export class UI {
   constructor(app) {
@@ -100,7 +135,11 @@ export class UI {
     }
     if (ok) {
       this.app.audio.order();
-      this.flashHint(type === 'defend' ? `${ok} battalion${ok > 1 ? 's' : ''} digging in` : `${ok} battalion${ok > 1 ? 's' : ''} falling back to safety`);
+      this.flashHint(
+        type === 'defend'
+          ? `${ok} battalion${ok > 1 ? 's' : ''} digging in`
+          : `${ok} battalion${ok > 1 ? 's' : ''} falling back to safety`,
+      );
     } else if (type === 'retreat') {
       this.flashHint('No safe line of retreat!');
     }
@@ -189,8 +228,29 @@ export class UI {
   }
 
   // ---------------------------------------------------------------- input
+  // Update a panel. Same structure: patch text, bars and classes in place so
+  // nodes (and their listeners) survive. New structure: rebuild and return true
+  // so the caller binds listeners. Nothing changes under a pressed mouse.
+  setHtml(el, html) {
+    if (this.panelPress === el || el.__html === html) return false;
+    el.__html = html;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    if (el.childNodes.length && sameShape(el, tpl.content)) {
+      patch(el, tpl.content);
+      return false;
+    }
+    el.innerHTML = html;
+    return true;
+  }
+
   bind() {
     const gl = $('gl');
+    for (const id of ['leftPanel', 'battlePanel', 'feed', 'objectives']) {
+      const el = $(id);
+      el.addEventListener('pointerdown', () => (this.panelPress = el));
+    }
+    window.addEventListener('pointerup', () => setTimeout(() => (this.panelPress = null), 0));
     gl.addEventListener('contextmenu', (e) => e.preventDefault());
     gl.addEventListener('pointerdown', (e) => this.onDown(e));
     window.addEventListener('pointermove', (e) => this.onMove(e));
@@ -204,9 +264,13 @@ export class UI {
     window.addEventListener('keydown', (e) => this.onKey(e, true));
     window.addEventListener('keyup', (e) => this.onKey(e, false));
 
-    document.querySelectorAll('.obtn').forEach((b) => b.addEventListener('click', () => this.orderButton(b.dataset.order)));
+    document
+      .querySelectorAll('.obtn')
+      .forEach((b) => b.addEventListener('click', () => this.orderButton(b.dataset.order)));
     $('pauseBtn').addEventListener('click', () => this.togglePause());
-    document.querySelectorAll('.speed').forEach((b) => b.addEventListener('click', () => this.setSpeed(+b.dataset.speed)));
+    document
+      .querySelectorAll('.speed')
+      .forEach((b) => b.addEventListener('click', () => this.setSpeed(+b.dataset.speed)));
     $('generalsBtn').addEventListener('click', () => this.openGenerals());
     $('helpBtn').addEventListener('click', () => this.openHelp());
     $('soundBtn').addEventListener('click', () => {
@@ -274,6 +338,12 @@ export class UI {
         return;
       }
     }
+    if (e.target !== $('gl')) {
+      this.hover = null;
+      this.preview = null;
+      this.setTooltip(null);
+      return;
+    }
     this.updateHover(e.clientX, e.clientY);
   }
 
@@ -295,7 +365,9 @@ export class UI {
         .filter((r) => {
           const cx = r.x + r.w / 2;
           const cy = r.y + r.h / 2;
-          return (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) || (r.fx >= x0 && r.fx <= x1 && r.fy >= y0 && r.fy <= y1);
+          return (
+            (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) || (r.fx >= x0 && r.fx <= x1 && r.fy >= y0 && r.fy <= y1)
+          );
         })
         .map((r) => r.u);
       if (hits.length) this.select(hits, e.shiftKey && this.selected.length > 0);
@@ -427,11 +499,13 @@ export class UI {
     const u = hud.unitAt(sx, sy);
     this.hover = u;
     if (u) {
+      this.preview = null;
       this.setTooltip(this.unitTooltip(u), sx, sy);
       return;
     }
     const b = hud.battleAt(sx, sy);
     if (b) {
+      this.preview = null;
       const s = this.game.combat.summary(b);
       const leafN = b.attSide === LEAF ? s.attSoldiers : s.defSoldiers;
       const stoneN = b.attSide === LEAF ? s.defSoldiers : s.attSoldiers;
@@ -443,6 +517,47 @@ export class UI {
       return;
     }
     this.setTooltip(null);
+    this.updatePreview(sx, sy);
+  }
+
+  // Ghost route from the first selected battalion to the cell under the cursor.
+  updatePreview(sx, sy) {
+    const cmd = this.commandable();
+    if (!cmd.length || this.mode === 'reinforce') {
+      this.preview = null;
+      return;
+    }
+    const g = this.rig.groundAt(sx, sy);
+    const cell = g ? this.game.map.cellAt(g.x, g.z) : -1;
+    if (cell < 0 || !this.game.map.cells[cell].passable) {
+      this.preview = null;
+      return;
+    }
+    const u = cmd[0];
+    if (
+      this.preview &&
+      this.preview.cell === cell &&
+      this.preview.unit === u &&
+      performance.now() - this.preview.t < 1500
+    )
+      return;
+    const enemyHeld = this.game.map.cells[cell].owner === STONE && this.game.enemiesInCell(LEAF, cell).length > 0;
+    const attack = this.mode === 'attack' || enemyHeld;
+    const path = findPath(this.game, u, cell, attack ? 'attack' : 'move');
+    if (!path || !path.length) {
+      this.preview = null;
+      return;
+    }
+    const map = this.game.map;
+    const pts = [[u.x, u.y]];
+    let cur = u.cell;
+    for (const id of path) {
+      const e = map.edge(cur, id);
+      if (e) pts.push([e.mx, e.my]);
+      pts.push([map.cells[id].x, map.cells[id].y]);
+      cur = id;
+    }
+    this.preview = { cell, unit: u, pts, color: attack ? '#ff8a6a' : '#ffffff', t: performance.now() };
   }
 
   unitTooltip(u) {
@@ -450,8 +565,10 @@ export class UI {
     const lvl = xpLevel(u.xp);
     const side = u.side === LEAF ? 'leaf' : 'stone';
     let action = '';
-    if (u.side === STONE && this.commandable().length) action = '<div style="color:#ff8a6a;font-weight:700">Click to ATTACK</div>';
-    else if (u.side === LEAF && this.mode === 'reinforce') action = '<div style="color:#5cd4ff;font-weight:700">Click to REINFORCE</div>';
+    if (u.side === STONE && this.commandable().length)
+      action = '<div style="color:#ff8a6a;font-weight:700">Click to ATTACK</div>';
+    else if (u.side === LEAF && this.mode === 'reinforce')
+      action = '<div style="color:#5cd4ff;font-weight:700">Click to REINFORCE</div>';
     const gen = game.general(u);
     return `<div class="tt-name ${side}">${esc(u.name)}</div>
       <div class="muted">${UNIT_TYPES[u.type].name} · ${lvl.name}${gen ? ' · Gen. ' + esc(gen.name) : ''}</div>
@@ -584,7 +701,7 @@ export class UI {
 
   renderFeed() {
     const el = $('feed');
-    el.innerHTML =
+    const html =
       '<h3>BATTLE REPORTS</h3>' +
       this.feed
         .slice(0, 18)
@@ -593,6 +710,7 @@ export class UI {
             `<div class="feed-item ${f.kind || 'info'} ${f.alert ? 'alert' : ''} ${f.fresh ? 'fresh' : ''}" data-i="${i}"><span class="fi">${f.icon || '•'}</span><span class="fx">${esc(f.text)}</span><span class="ft">${f.when}</span></div>`,
         )
         .join('');
+    if (!this.setHtml(el, html)) return;
     el.querySelectorAll('.feed-item').forEach((n) =>
       n.addEventListener('click', () => {
         const f = this.feed[+n.dataset.i];
@@ -641,11 +759,14 @@ export class UI {
     requestAnimationFrame(() => token === this.bannerToken && el.classList.add('show'));
     if (b.kind === 'good') this.app.audio.fanfare(true);
     else if (b.kind === 'bad') this.app.audio.fanfare(false);
-    setTimeout(() => {
-      this.bannerToken++;
-      el.classList.remove('show');
-      setTimeout(() => this.nextBanner(), 450);
-    }, b.big ? 3600 : 2500);
+    setTimeout(
+      () => {
+        this.bannerToken++;
+        el.classList.remove('show');
+        setTimeout(() => this.nextBanner(), 450);
+      },
+      b.big ? 3600 : 2500,
+    );
   }
 
   hintHtml() {
@@ -709,16 +830,19 @@ export class UI {
     $('leafPct').textContent = Math.round(share * 100) + '%';
     $('stonePct').textContent = Math.round((1 - share) * 100) + '%';
     $('leafBar').style.width = share * 100 + '%';
-    $('collapse').textContent = game.collapsing[STONE] ? 'ENEMY FRONT COLLAPSING' : game.collapsing[LEAF] ? 'OUR FRONT IS COLLAPSING' : '';
+    $('collapse').textContent = game.collapsing[STONE]
+      ? 'ENEMY FRONT COLLAPSING'
+      : game.collapsing[LEAF]
+        ? 'OUR FRONT IS COLLAPSING'
+        : '';
     const map = game.map;
     const objEl = $('objectives');
-    objEl.innerHTML = OBJECTIVES[LEAF]
-      .map((k) => {
-        const l = map.locByKey[k];
-        const held = l.owner === LEAF;
-        return `<div class="obj ${held ? 'held' : ''}" data-k="${k}" title="${esc(l.name)} — ${held ? 'captured' : 'capture this objective'}"><span class="ic">${held ? '✓' : '◎'}</span><span class="nm">${esc(l.name)}</span></div>`;
-      })
-      .join('');
+    const objHtml = OBJECTIVES[LEAF].map((k) => {
+      const l = map.locByKey[k];
+      const held = l.owner === LEAF;
+      return `<div class="obj ${held ? 'held' : ''}" data-k="${k}" title="${esc(l.name)} — ${held ? 'captured' : 'capture this objective'}"><span class="ic">${held ? '✓' : '◎'}</span><span class="nm">${esc(l.name)}</span></div>`;
+    }).join('');
+    if (!this.setHtml(objEl, objHtml)) return;
     objEl.querySelectorAll('.obj').forEach((n) =>
       n.addEventListener('click', () => {
         const l = map.locByKey[n.dataset.k];
@@ -740,7 +864,7 @@ export class UI {
     const game = this.game;
     const sel = this.selected;
     if (!sel.length) {
-      el.innerHTML = this.rosterHtml();
+      if (!this.setHtml(el, this.rosterHtml())) return;
       el.querySelectorAll('[data-uid]').forEach((n) =>
         n.addEventListener('click', () => {
           const u = game.unitById.get(+n.dataset.uid);
@@ -752,15 +876,18 @@ export class UI {
       return;
     }
     if (sel.length > 1) {
-      el.innerHTML =
+      const html =
         `<h3>${sel.length} BATTALIONS SELECTED</h3>` +
         sel
           .map(
-            (u) => `<div class="multi-row" data-uid="${u.id}"><span class="nm">${esc(u.short)}</span><span class="muted" style="text-align:right;font-size:11px">${formatNum(u.soldiers)}</span>
+            (
+              u,
+            ) => `<div class="multi-row" data-uid="${u.id}"><span class="nm">${esc(u.short)}</span><span class="muted" style="text-align:right;font-size:11px">${formatNum(u.soldiers)}</span>
           ${this.bar('str ' + this.strengthCls(u.soldiers / u.max), u.soldiers / u.max)}${this.bar('mor', u.morale)}</div>`,
           )
           .join('') +
         `<div class="panel-actions"><button class="sbtn" id="clearSel">CLEAR</button></div>`;
+      if (!this.setHtml(el, html)) return;
       el.querySelectorAll('[data-uid]').forEach((n) =>
         n.addEventListener('click', () => {
           const u = game.unitById.get(+n.dataset.uid);
@@ -779,7 +906,10 @@ export class UI {
     const map = game.map;
     const cell = map.cells[u.cell];
     const loc = cell.loc !== null ? map.locations[cell.loc] : null;
-    const terrain = loc && loc.type !== 'village' && loc.type !== 'bridge' ? `${loc.name} (${LOCATION_TYPES[loc.type].name})` : TERRAIN[cell.terrain].name;
+    const terrain =
+      loc && loc.type !== 'village' && loc.type !== 'bridge'
+        ? `${loc.name} (${LOCATION_TYPES[loc.type].name})`
+        : TERRAIN[cell.terrain].name;
     const gen = game.general(u);
     const army = game.armies[u.army];
     const status = unitStatus(game, u);
@@ -792,7 +922,7 @@ export class UI {
     } else if (u.path.length) {
       extra = `<div class="muted" style="margin-top:6px;font-size:12px">Arrives in ~${Math.max(1, Math.round(etaHours(game, u)))}h</div>`;
     }
-    el.innerHTML = `
+    const html = `
       ${enemy ? '<div class="enemy-tag">ENEMY BATTALION</div>' : ''}
       <div class="unit-head">
         <canvas class="nato ${enemy ? 'stone' : 'leaf'}" id="natoIcon" width="92" height="64"></canvas>
@@ -815,10 +945,16 @@ export class UI {
       ${extra}
       ${enemy ? '' : `<div class="panel-actions"><button class="sbtn" id="selArmy">SELECT ARMY</button><button class="sbtn" id="nextUnit">NEXT ▶</button></div>`}
     `;
+    if (!this.setHtml(el, html)) return;
     this.drawNato($('natoIcon'), u);
     if (!enemy) {
-      $('selArmy').addEventListener('click', () => this.select(game.units.filter((o) => o.alive && o.side === LEAF && o.army === u.army)));
-      $('nextUnit').addEventListener('click', () => this.onKey({ key: 'Tab', preventDefault() {}, shiftKey: false, target: null }, true));
+      $('selArmy').addEventListener('click', () => {
+        const cur = this.selected[0];
+        if (cur) this.select(this.game.units.filter((o) => o.alive && o.side === LEAF && o.army === cur.army));
+      });
+      $('nextUnit').addEventListener('click', () =>
+        this.onKey({ key: 'Tab', preventDefault() {}, shiftKey: false, target: null }, true),
+      );
     }
   }
 
@@ -832,7 +968,8 @@ export class UI {
   rosterHtml() {
     const game = this.game;
     const groups = Object.values(game.armies).filter((a) => a.side === LEAF);
-    let html = '<h3>YOUR BATTALIONS</h3><div class="empty-card" style="margin-bottom:8px">Click a battalion here or on the map. Double-click on the map selects its whole army.</div>';
+    let html =
+      '<h3>YOUR BATTALIONS</h3><div class="empty-card" style="margin-bottom:8px">Click a battalion here or on the map. Double-click on the map selects its whole army.</div>';
     for (const a of groups) {
       const units = game.units.filter((u) => u.alive && u.side === LEAF && u.army === a.id);
       if (!units.length) continue;
@@ -849,7 +986,8 @@ export class UI {
   currentBattle() {
     const game = this.game;
     const active = game.combat.battles.filter((b) => !b.over);
-    if (this.focusBattle && (!this.focusBattle.over || game.time - this.focusBattle.endTime < 3)) return this.focusBattle;
+    if (this.focusBattle && (!this.focusBattle.over || game.time - this.focusBattle.endTime < 3))
+      return this.focusBattle;
     const sel = this.selected[0];
     if (sel && sel.battle) return sel.battle;
     if (!active.length) return null;
@@ -863,7 +1001,10 @@ export class UI {
     const active = game.combat.battles.filter((b) => !b.over);
     const b = this.currentBattle();
     if (!b) {
-      el.innerHTML = `<h3>BATTLE</h3><div class="empty-card">The front is quiet. Select a battalion and click a <b style="color:#ff8a6a">red enemy battalion</b> to attack.</div>`;
+      this.setHtml(
+        el,
+        `<h3>BATTLE</h3><div class="empty-card">The front is quiet. Select a battalion and click a <b style="color:#ff8a6a">red enemy battalion</b> to attack.</div>`,
+      );
       return;
     }
     const s = game.combat.summary(b);
@@ -881,21 +1022,30 @@ export class UI {
     const idx = active.indexOf(b);
     const cell = game.map.cells[b.cell];
     const loc = cell.loc !== null ? game.map.locations[cell.loc] : null;
-    const terrainName = loc && loc.type !== 'village' && loc.type !== 'bridge' ? LOCATION_TYPES[loc.type].name : TERRAIN[cell.terrain].name;
+    const terrainName =
+      loc && loc.type !== 'village' && loc.type !== 'bridge'
+        ? LOCATION_TYPES[loc.type].name
+        : TERRAIN[cell.terrain].name;
     const notes = [];
-    notes.push(`${leafAtt ? 'Enemy defends' : 'We defend'}: ${terrainName} ${s.terrain > 1.01 ? `(+${Math.round((s.terrain - 1) * 100)}% defense)` : ''}`);
+    notes.push(
+      `${leafAtt ? 'Enemy defends' : 'We defend'}: ${terrainName} ${s.terrain > 1.01 ? `(+${Math.round((s.terrain - 1) * 100)}% defense)` : ''}`,
+    );
     const river = b.attackers.some((a) => game.map.edge(a.cell, b.cell)?.river);
     if (river) notes.push('Attackers crossing a river');
-    if (game.weather.type !== 'clear') notes.push(game.weather.type === 'rain' ? 'Rain hampers the attack' : 'Fog over the battlefield');
+    if (game.weather.type !== 'clear')
+      notes.push(game.weather.type === 'rain' ? 'Rain hampers the attack' : 'Fog over the battlefield');
     for (const r of s.incoming) {
       if (r.side !== LEAF) continue;
-      notes.push(`<span class="reinf">→ ${esc(r.short)} arriving (~${Math.max(1, Math.round(etaHours(game, r)))}h)</span>`);
+      notes.push(
+        `<span class="reinf">→ ${esc(r.short)} arriving (~${Math.max(1, Math.round(etaHours(game, r)))}h)</span>`,
+      );
     }
     const enemyIncoming = s.incoming.filter((r) => r.side === STONE && game.isVisible(r));
     if (enemyIncoming.length) notes.push(`<span style="color:#ff9a86">⚠ Enemy reinforcements approaching</span>`);
     let title = `⚔ BATTLE ${esc(b.place.toUpperCase())}`;
-    if (b.over) title = b.winner === LEAF ? '✓ VICTORY ' + esc(b.place.toUpperCase()) : '✗ DEFEAT ' + esc(b.place.toUpperCase());
-    el.innerHTML = `
+    if (b.over)
+      title = b.winner === LEAF ? '✓ VICTORY ' + esc(b.place.toUpperCase()) : '✗ DEFEAT ' + esc(b.place.toUpperCase());
+    const html = `
       <div class="battle-title"><span>${title}</span><span class="nav">${active.length > 1 ? `<button id="bPrev">◀</button><span style="font-size:12px;color:var(--muted);padding:3px 2px">${idx + 1}/${active.length}</span><button id="bNext">▶</button>` : ''}<button id="bJump" title="Jump to battle (B)">◎</button></span></div>
       <div class="versus">
         <div class="side"><div class="nm leaf">${names(L)}</div><div class="big">${formatNum(ln)}</div><div class="small">Morale ${pct(lm)}</div>${this.bar('org', lo)}</div>
@@ -909,17 +1059,23 @@ export class UI {
         .slice(0, 3)
         .map((l) => `<div>${esc(l.text)}</div>`)
         .join('')}</div>`;
+    if (!this.setHtml(el, html)) return;
     const go = (d) => {
-      this.focusBattle = null;
-      this.battleIdx = (idx + d + active.length) % active.length;
-      const nb = active[this.battleIdx];
+      const list = this.game.combat.battles.filter((o) => !o.over);
+      if (!list.length) return;
+      const at = Math.max(0, list.indexOf(this.currentBattle()));
+      this.battleIdx = (at + d + list.length) % list.length;
+      const nb = list[this.battleIdx];
       this.focusBattle = nb;
       this.rig.flyTo(nb.x, nb.y);
       this.refreshPanels(true);
     };
     $('bPrev')?.addEventListener('click', () => go(-1));
     $('bNext')?.addEventListener('click', () => go(1));
-    $('bJump')?.addEventListener('click', () => this.rig.flyTo(b.x, b.y, Math.min(this.rig.want.dist, 700)));
+    $('bJump')?.addEventListener('click', () => {
+      const cur = this.currentBattle();
+      if (cur) this.rig.flyTo(cur.x, cur.y, Math.min(this.rig.want.dist, 700));
+    });
   }
 
   // ---------------------------------------------------------------- modals
@@ -944,7 +1100,12 @@ export class UI {
     el.classList.remove('hidden');
     const leafGens = Object.values(game.generals).filter((g) => g.side === LEAF);
     const armies = Object.values(game.armies).filter((a) => a.side === LEAF);
-    const initials = (n) => n.split(' ').map((p) => p[0]).join('').slice(0, 2);
+    const initials = (n) =>
+      n
+        .split(' ')
+        .map((p) => p[0])
+        .join('')
+        .slice(0, 2);
     const genCard = (g, stone) =>
       g
         ? `<div class="general"><div class="portrait ${stone ? 'stone' : ''} ${g.woundedUntil > game.time ? 'wounded' : ''}">${initials(g.name)}</div><div><div class="gname">General ${esc(g.name)}</div><div class="gtrait"><b>${TRAITS[g.trait].icon} ${g.trait}</b> — ${TRAITS[g.trait].desc}${g.woundedUntil > game.time ? ' <span style="color:#ff9a86">(wounded)</span>' : ''}</div></div></div>`
@@ -958,13 +1119,17 @@ export class UI {
           const units = game.units.filter((u) => u.alive && u.side === LEAF && u.army === a.id);
           return `<div class="army"><h4>${esc(a.name)}</h4>${genCard(g)}
             <select data-army="${a.id}">${leafGens
-              .map((lg) => `<option value="${lg.id}" ${lg.id === a.general ? 'selected' : ''}>${esc(lg.name)} — ${lg.trait}${armies.find((o) => o.general === lg.id && o !== a) ? ' (swap)' : ''}</option>`)
+              .map(
+                (lg) =>
+                  `<option value="${lg.id}" ${lg.id === a.general ? 'selected' : ''}>${esc(lg.name)} — ${lg.trait}${armies.find((o) => o.general === lg.id && o !== a) ? ' (swap)' : ''}</option>`,
+              )
               .join('')}</select>
             <div style="margin-top:8px">${units
               .map(
-                (u) => `<div class="bat-chip" data-uid="${u.id}"><span>${esc(u.name)}</span><select data-unit="${u.id}">${armies
-                  .map((o) => `<option value="${o.id}" ${o.id === a.id ? 'selected' : ''}>${esc(o.name)}</option>`)
-                  .join('')}</select></div>`,
+                (u) =>
+                  `<div class="bat-chip" data-uid="${u.id}"><span>${esc(u.name)}</span><select data-unit="${u.id}">${armies
+                    .map((o) => `<option value="${o.id}" ${o.id === a.id ? 'selected' : ''}>${esc(o.name)}</option>`)
+                    .join('')}</select></div>`,
               )
               .join('')}</div></div>`;
         })
@@ -973,7 +1138,10 @@ export class UI {
       <h3 style="margin-top:18px;color:#ff9a86">ENEMY COMMANDERS</h3>
       <div class="enemy-gens">${Object.values(game.armies)
         .filter((a) => a.side === STONE)
-        .map((a) => `<div>${genCard(game.generals[a.general], true)}<div class="muted" style="font-size:11px;margin:4px 0 0 54px">${esc(a.name)}</div></div>`)
+        .map(
+          (a) =>
+            `<div>${genCard(game.generals[a.general], true)}<div class="muted" style="font-size:11px;margin:4px 0 0 54px">${esc(a.name)}</div></div>`,
+        )
         .join('')}</div>
     </div>`;
     $('genClose').addEventListener('click', () => this.closeModals());
@@ -987,7 +1155,11 @@ export class UI {
         if (other) other.general = a.general;
         a.general = s.value;
         this.app.audio.order();
-        this.addFeed({ kind: 'info', icon: '★', text: `General ${game.generals[s.value].name} takes command of the ${a.name}` });
+        this.addFeed({
+          kind: 'info',
+          icon: '★',
+          text: `General ${game.generals[s.value].name} takes command of the ${a.name}`,
+        });
         this.openGenerals();
       }),
     );
@@ -1067,5 +1239,3 @@ export class UI {
     this.app.audio.fanfare(win, true);
   }
 }
-
-export { findPath, SIDES };

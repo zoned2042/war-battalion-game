@@ -152,7 +152,13 @@ export class Combat {
     game.emit('battleStart', b);
     const def = defenders[0];
     if (def.side === LEAF) {
-      game.emit('feed', { kind: 'bad', icon: '⚔', text: `${def.short} is under attack ${place}!`, battle: b, alert: true });
+      game.emit('feed', {
+        kind: 'bad',
+        icon: '⚔',
+        text: `${def.short} is under attack ${place}!`,
+        battle: b,
+        alert: true,
+      });
     } else {
       game.emit('feed', { kind: 'info', icon: '⚔', text: `${u.short} attacks ${def.short} ${place}`, battle: b });
     }
@@ -339,7 +345,13 @@ export class Combat {
     u.routedAt = game.time;
     u.stats.lost++;
     const mine = u.side === LEAF;
-    game.emit('feed', { kind: mine ? 'bad' : 'good', icon: '⚠', text: `${u.short} forced to retreat!`, battle: b, unit: u });
+    game.emit('feed', {
+      kind: mine ? 'bad' : 'good',
+      icon: '⚠',
+      text: `${u.short} forced to retreat!`,
+      battle: b,
+      unit: u,
+    });
     game.emit('float', { x: u.x, y: u.y, text: 'RETREATING', side: 1 - u.side });
     this.log(b, `${u.short} breaks and retreats`);
     game.orders.retreat(u, true);

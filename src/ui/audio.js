@@ -132,7 +132,15 @@ export class Sound {
     while (this.crackleAcc > 1) {
       this.crackleAcc -= 1;
       const delay = Math.random() * 0.05;
-      this.burst({ dur: 0.06, freq: 1800 + Math.random() * 1800, type: 'bandpass', q: 1.2, gain: (0.05 + Math.random() * 0.07) * Math.min(1, level * 1.4), decay: 0.05 + Math.random() * 0.05, delay });
+      this.burst({
+        dur: 0.06,
+        freq: 1800 + Math.random() * 1800,
+        type: 'bandpass',
+        q: 1.2,
+        gain: (0.05 + Math.random() * 0.07) * Math.min(1, level * 1.4),
+        decay: 0.05 + Math.random() * 0.05,
+        delay,
+      });
     }
   }
 }

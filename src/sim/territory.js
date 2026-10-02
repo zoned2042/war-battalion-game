@@ -95,7 +95,8 @@ export class Territory {
       for (const c of map.cells) {
         if (c.owner !== side) continue;
         const loc = c.loc !== null ? map.locations[c.loc] : null;
-        const source = (loc && (loc.type === 'capital' || loc.type === 'city' || loc.type === 'fort')) ||
+        const source =
+          (loc && (loc.type === 'capital' || loc.type === 'city' || loc.type === 'fort')) ||
           (side === LEAF ? c.x < 70 : c.x > WORLD.W - 70);
         if (source) {
           sup[c.id] = 1;

@@ -1,7 +1,7 @@
 // Terrain mesh, painted ground texture, territory tint and water.
 
 import * as THREE from 'three';
-import { WORLD, SIDES, LOCATIONS } from '../data/config.js';
+import { WORLD, SIDES } from '../data/config.js';
 import { clamp, lerp, smoothstep, distToPolyline } from '../core/util.js';
 import { Rng } from '../core/rng.js';
 import { SUN_DIR } from './scene.js';
@@ -169,8 +169,12 @@ export class Terrain {
     const map = this.map;
     const rng = new Rng(map.seed * 7 + 11);
     const palette = [
-      'rgba(214,190,108,0.55)', 'rgba(150,176,86,0.5)', 'rgba(146,112,74,0.5)',
-      'rgba(190,172,98,0.55)', 'rgba(124,156,72,0.5)', 'rgba(200,160,90,0.45)',
+      'rgba(214,190,108,0.55)',
+      'rgba(150,176,86,0.5)',
+      'rgba(146,112,74,0.5)',
+      'rgba(190,172,98,0.55)',
+      'rgba(124,156,72,0.5)',
+      'rgba(200,160,90,0.45)',
     ];
     for (const l of map.locations) {
       if (l.type === 'bridge' || l.type === 'fort') continue;
@@ -194,7 +198,7 @@ export class Terrain {
         const hh = rng.float(12, 28);
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(ang0 + rng.int(0, 1) * Math.PI / 2 + rng.float(-0.15, 0.15));
+        ctx.rotate(ang0 + (rng.int(0, 1) * Math.PI) / 2 + rng.float(-0.15, 0.15));
         ctx.fillStyle = rng.pick(palette);
         ctx.fillRect(-w / 2, -hh / 2, w, hh);
         ctx.strokeStyle = 'rgba(60,72,36,0.35)';
@@ -357,7 +361,7 @@ export class Terrain {
         const iy = Math.floor(fy);
         const tx = fx - ix;
         const ty = fy - iy;
-        const at = (a, b) => g[((b % cells) + cells) % cells * cells + (((a % cells) + cells) % cells)];
+        const at = (a, b) => g[(((b % cells) + cells) % cells) * cells + (((a % cells) + cells) % cells)];
         const sx = tx * tx * (3 - 2 * tx);
         const sy = ty * ty * (3 - 2 * ty);
         return lerp(lerp(at(ix, iy), at(ix + 1, iy), sx), lerp(at(ix, iy + 1), at(ix + 1, iy + 1), sx), sy);
@@ -399,9 +403,15 @@ export class Terrain {
       shader.uniforms.detailMap = { value: detailTex };
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        .replace(
+          '#include <begin_vertex>',
+          '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;',
+        );
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform sampler2D ownMap;\nuniform sampler2D detailMap;\nvarying vec3 vWPos;')
+        .replace(
+          '#include <common>',
+          '#include <common>\nuniform sampler2D ownMap;\nuniform sampler2D detailMap;\nvarying vec3 vWPos;',
+        )
         .replace(
           '#include <map_fragment>',
           `#include <map_fragment>
@@ -508,5 +518,3 @@ export class Terrain {
     this.rig.scene.add(water);
   }
 }
-
-export { LOCATIONS };

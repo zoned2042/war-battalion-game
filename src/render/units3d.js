@@ -48,7 +48,9 @@ function carGeo(side) {
   ];
   for (const x of [-3.5, 3.5]) {
     for (const z of [-3, 3]) {
-      parts.push(colored(new THREE.CylinderGeometry(1.6, 1.6, 1.2, 10).rotateX(Math.PI / 2).translate(x, 1.6, z), '#1f1f1f'));
+      parts.push(
+        colored(new THREE.CylinderGeometry(1.6, 1.6, 1.2, 10).rotateX(Math.PI / 2).translate(x, 1.6, z), '#1f1f1f'),
+      );
     }
   }
   return mergeGeometries(parts).scale(1.45, 1.45, 1.45);
@@ -56,7 +58,13 @@ function carGeo(side) {
 
 function tentGeo() {
   return mergeGeometries([
-    colored(new THREE.CylinderGeometry(5.5, 5.5, 13, 3).rotateZ(Math.PI / 2).rotateX(-Math.PI / 2).translate(0, 2.75, 0), '#efeee6'),
+    colored(
+      new THREE.CylinderGeometry(5.5, 5.5, 13, 3)
+        .rotateZ(Math.PI / 2)
+        .rotateX(-Math.PI / 2)
+        .translate(0, 2.75, 0),
+      '#efeee6',
+    ),
     colored(new THREE.BoxGeometry(5, 0.4, 1.4).translate(0, 8.4, 0), '#d22a2a'),
     colored(new THREE.BoxGeometry(1.4, 0.4, 5).translate(0, 8.4, 0), '#d22a2a'),
   ]).scale(1.4, 1.4, 1.4);
@@ -114,8 +122,20 @@ export class Formations {
     // selection rings
     this.rings = [];
     const ringGeo = new THREE.RingGeometry(34, 39, 48).rotateX(-Math.PI / 2);
-    this.ringMat = new THREE.MeshBasicMaterial({ color: '#ffe066', transparent: true, opacity: 0.9, depthTest: false, depthWrite: false });
-    this.enemyRingMat = new THREE.MeshBasicMaterial({ color: '#ff5a4a', transparent: true, opacity: 0.85, depthTest: false, depthWrite: false });
+    this.ringMat = new THREE.MeshBasicMaterial({
+      color: '#ffe066',
+      transparent: true,
+      opacity: 0.9,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.enemyRingMat = new THREE.MeshBasicMaterial({
+      color: '#ff5a4a',
+      transparent: true,
+      opacity: 0.85,
+      depthTest: false,
+      depthWrite: false,
+    });
     for (let i = 0; i < 30; i++) {
       const r = new THREE.Mesh(ringGeo, this.ringMat);
       r.renderOrder = 20;
@@ -300,7 +320,15 @@ export class Formations {
     this.sandbags.count = counts.bag;
     this.poles.count = counts.ban;
     this.banners.count = counts.ban;
-    for (const mesh of [...this.figs, this.cannons, ...this.cars, this.tents, this.sandbags, this.poles, this.banners]) {
+    for (const mesh of [
+      ...this.figs,
+      this.cannons,
+      ...this.cars,
+      this.tents,
+      this.sandbags,
+      this.poles,
+      this.banners,
+    ]) {
       mesh.instanceMatrix.needsUpdate = true;
     }
     if (this.banners.instanceColor) this.banners.instanceColor.needsUpdate = true;

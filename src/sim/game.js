@@ -2,8 +2,21 @@
 
 import { Rng } from '../core/rng.js';
 import {
-  LEAF, STONE, SIDES, WORLD, DIFFICULTY, GENERALS, ARMIES, BATTALIONS, OBJECTIVES, CAPITAL,
-  LOCATION_TYPES, CAPTAINS, HOURS_PER_SECOND, START_YEAR, startFrontX,
+  LEAF,
+  STONE,
+  SIDES,
+  WORLD,
+  DIFFICULTY,
+  GENERALS,
+  ARMIES,
+  BATTALIONS,
+  OBJECTIVES,
+  CAPITAL,
+  LOCATION_TYPES,
+  CAPTAINS,
+  HOURS_PER_SECOND,
+  START_YEAR,
+  startFrontX,
 } from '../data/config.js';
 import { createUnit, updateMovement, updateRecovery, resetUnitIds } from './units.js';
 import { Orders } from './orders.js';
@@ -203,7 +216,11 @@ export class Game {
       alert: !mine,
     });
     if (!mine && (isObj || loc.type === 'capital')) {
-      this.emit('banner', { text: `${loc.name.toUpperCase()} UNDER SIEGE`, sub: `Send battalions to drive the enemy out — ${need}h left`, kind: 'bad' });
+      this.emit('banner', {
+        text: `${loc.name.toUpperCase()} UNDER SIEGE`,
+        sub: `Send battalions to drive the enemy out — ${need}h left`,
+        kind: 'bad',
+      });
     }
   }
 
@@ -251,7 +268,12 @@ export class Game {
       y: u.y,
       alert: mine,
     });
-    this.emit('float', { x: u.x, y: u.y, text: reason === 'surrender' ? 'SURRENDERED' : 'DESTROYED', side: 1 - u.side });
+    this.emit('float', {
+      x: u.x,
+      y: u.y,
+      text: reason === 'surrender' ? 'SURRENDERED' : 'DESTROYED',
+      side: 1 - u.side,
+    });
     this.emit('unitDestroyed', u);
   }
 
@@ -284,8 +306,12 @@ export class Game {
       this.emit('banner', {
         text: `${loc.name.toUpperCase()} ${mine ? 'CAPTURED' : 'LOST'}`,
         sub: mine
-          ? isObjective ? 'Objective secured — nearby enemy battalions are shaken' : 'The front advances'
-          : isObjective ? 'A key objective has fallen!' : 'The enemy pushes forward',
+          ? isObjective
+            ? 'Objective secured — nearby enemy battalions are shaken'
+            : 'The front advances'
+          : isObjective
+            ? 'A key objective has fallen!'
+            : 'The enemy pushes forward',
         kind: mine ? 'good' : 'bad',
       });
     }
@@ -310,7 +336,9 @@ export class Game {
         const mineCollapsing = foe === LEAF;
         this.emit('banner', {
           text: mineCollapsing ? 'OUR FRONT IS COLLAPSING' : 'ENEMY FRONT COLLAPSING',
-          sub: mineCollapsing ? 'Retake our objectives before the army breaks!' : 'Press the attack — victory is within reach',
+          sub: mineCollapsing
+            ? 'Retake our objectives before the army breaks!'
+            : 'Press the attack — victory is within reach',
           kind: mineCollapsing ? 'bad' : 'good',
           big: true,
         });
@@ -322,9 +350,23 @@ export class Game {
     const capFallen = (side) => this.map.locByKey[CAPITAL[side]].owner !== side;
     const armyGone = (side) => this.units.filter((u) => u.alive && u.side === side).length <= 1;
     if (capFallen(STONE) || this.objectivesHeld(LEAF) === this.objectives[LEAF].length || armyGone(STONE)) {
-      this.end(LEAF, capFallen(STONE) ? 'Kharzad has fallen. The Stone Dominion surrenders.' : armyGone(STONE) ? 'The Stone army has been destroyed.' : 'Every objective is in Leaf hands. The enemy sues for peace.');
+      this.end(
+        LEAF,
+        capFallen(STONE)
+          ? 'Kharzad has fallen. The Stone Dominion surrenders.'
+          : armyGone(STONE)
+            ? 'The Stone army has been destroyed.'
+            : 'Every objective is in Leaf hands. The enemy sues for peace.',
+      );
     } else if (capFallen(LEAF) || this.objectivesHeld(STONE) === this.objectives[STONE].length || armyGone(LEAF)) {
-      this.end(STONE, capFallen(LEAF) ? 'Sennai has fallen.' : armyGone(LEAF) ? 'Our army has been destroyed.' : 'The enemy holds all of our key positions.');
+      this.end(
+        STONE,
+        capFallen(LEAF)
+          ? 'Sennai has fallen.'
+          : armyGone(LEAF)
+            ? 'Our army has been destroyed.'
+            : 'The enemy holds all of our key positions.',
+      );
     }
   }
 
