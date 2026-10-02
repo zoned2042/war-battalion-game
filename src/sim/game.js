@@ -348,14 +348,17 @@ export class Game {
       }
     }
     const capFallen = (side) => this.map.locByKey[CAPITAL[side]].owner !== side;
-    const armyGone = (side) => this.units.filter((u) => u.alive && u.side === side).length <= 1;
+    const share = this.territory.controlShare();
+    // an army squeezed into a corner of the map has collapsed
+    const cornered = (side) => (side === LEAF ? share : 1 - share) < 0.08;
+    const armyGone = (side) => this.units.filter((u) => u.alive && u.side === side).length <= 1 || cornered(side);
     if (capFallen(STONE) || this.objectivesHeld(LEAF) === this.objectives[LEAF].length || armyGone(STONE)) {
       this.end(
         LEAF,
         capFallen(STONE)
           ? 'Kharzad has fallen. The Stone Dominion surrenders.'
           : armyGone(STONE)
-            ? 'The Stone army has been destroyed.'
+            ? 'The Stone army has collapsed and surrenders.'
             : 'Every objective is in Leaf hands. The enemy sues for peace.',
       );
     } else if (capFallen(LEAF) || this.objectivesHeld(STONE) === this.objectives[STONE].length || armyGone(LEAF)) {
@@ -364,7 +367,7 @@ export class Game {
         capFallen(LEAF)
           ? 'Sennai has fallen.'
           : armyGone(LEAF)
-            ? 'Our army has been destroyed.'
+            ? 'Our army has collapsed.'
             : 'The enemy holds all of our key positions.',
       );
     }
